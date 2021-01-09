@@ -71,15 +71,18 @@ int main(int argc, char * argv[])
     
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     
-    int ChosenSchedulingAlgorithm = 0, NumberOfParameters = 0;
+    int ChosenSchedulingAlgorithm = 0, Quantum = 0;
     
     printf("Scheduling Algorithm:\nFor Round Robin Enter 0\nFor Highest Priority First Enter 1\nFor Shortest Remaining Time Enter 2\n");
     
     scanf("%d", &ChosenSchedulingAlgorithm);
     
-    printf("Enter the number of parameters (0 if no parameters): ");
-    
-    scanf("%d", &NumberOfParameters);
+    if(ChosenSchedulingAlgorithm == 0) //Round Robin
+    {
+		printf("Enter the quantum value for Round Robin: ");
+		
+		scanf("%d", &Quantum);
+    }
     
     // 3. Initiate and create the scheduler and clock processes.
     
@@ -110,7 +113,7 @@ int main(int argc, char * argv[])
     while(1)
     {
     	x = getClk();
-    	for(int i=0; i<NumberOfProcesses; i++) //Should I sleep if the arrival time is not he time of the clock?
+    	for(int i=0; i<NumberOfProcesses; i++) //Should I sleep if the arrival time is not the time of the clock?
     	{
 			if(Processes[i].Arrival == x)
 			{
