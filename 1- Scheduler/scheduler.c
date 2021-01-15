@@ -39,27 +39,6 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 		
 		Counter++;
 	}
-	
-	if(SchedulingAlgorithm == 1) //HPF sorting
-	{
-		struct Node* Temp2 = ReadyQueue;
-		struct Node* Temp3 = ReadyQueue;
-		for(int i=0; i<(OldCount+Counter)-1; i++)
-		{
-			for(int j=i+1; j<(OldCount+Counter); j++)
-			{
-				if(Temp2->Value->Priority > Temp3->Value->Priority)
-				{
-					struct Process* Temp4 = Temp2->Value;
-					*(Temp2) = *(Temp3); //We Stopped Here
-				}
-			}
-		}
-	}
-	else if(SchedulingAlgorithm == 2) //SRTN sorting
-	{
-	
-	}
 }
 
 int main(int argc, char * argv[])
@@ -87,25 +66,69 @@ int main(int argc, char * argv[])
     //TODO implement the scheduler :)
     SchedulingAlgorithm = atoi(argv[1]); //Should be sent from outside
 	int Quantum = (SchedulingAlgorithm==0)? atoi(argv[2]) : 1; // get the quantum if RR
+	int PrevClk = getClk() - 1;
 	switch(SchedulingAlgorithm)
 	{
 		case 0: //RR
-			
 			while(1)
 			{
-				
+				if(getClk() - PrevClk > 1)
+				{
+					
+					
+					PrevClk = getClk();
+				}
 			}
 			break;
 		case 1: //HPF
 			while(1)
 			{
-				
+				if(getClk() - PrevClk > 1)
+				{
+					if(ReadyQueue != NULL)
+					{
+						struct Node* BestPriority = ReadyQueue;
+						struct Node* Temp = ReadyQueue;
+						
+						while(Temp != NULL)
+						{
+							if(Temp->Value->Priority < BestPriority->Value->Priority)
+								BestPriority = Temp;
+								
+							Temp = Temp->Next;	
+						}
+						
+						int PID = fork();
+						if(PID == 0)
+						{
+							char char_arg[100]; 
+							printf("Noice");
+							sprintf(char_arg, "./process.out %d %d", BestPriority->Value->Runtime, getppid());
+							int Status = system(char_arg);
+							exit(0);
+						}
+						
+						int stat_loc;
+						waitpid(PID, &stat_loc, 0);
+						if(WIFEXITED(stat_loc)){}
+						
+						//Archive
+						
+					}
+					
+					PrevClk = getClk();
+				}
 			}
 			break;
 		case 2: //SRTN
 			while(1)
 			{
-				
+				if(getClk() - PrevClk > 1)
+				{
+					
+					
+					PrevClk = getClk();
+				}
 			}
 			break;
 	}

@@ -3,6 +3,7 @@
 struct Process** Processes; //Declared global to clean them upon interruption
 int shmid;
 struct Process*** ProcSch_shmaddr;
+int NumberOfProcesses;
 
 void clearResources(int);
 
@@ -16,7 +17,7 @@ int main(int argc, char * argv[])
     FILE * pFile; //Openning the procceses file for reading
     pFile = fopen("processes.txt", "r");
     
-    int NumberOfProcesses = -1; //Equal to -1 to skip the first line "Comment"
+    NumberOfProcesses = -1; //Equal to -1 to skip the first line "Comment"
     
     if(pFile != 0) //File exists
     {
@@ -48,7 +49,7 @@ int main(int argc, char * argv[])
     	{
     		Processes[i] = malloc(sizeof(struct Process));
 			fscanf(pFile, "%s", Word); //Read string at a time
-			Processes[i]->ID = atoi(word);
+			Processes[i]->ID = atoi(Word);
 			fscanf(pFile, "%s", Word);
 			Processes[i]->Arrival = atoi(Word);
 			fscanf(pFile, "%s", Word);
@@ -89,9 +90,9 @@ int main(int argc, char * argv[])
     	
 		char char_arg [100];
 		if(ChosenSchedulingAlgorithm == 0)
-			sprintf(char_arg, "./scheduler.out  %d %d",ChosenSchedulingAlgorithm, Quantum);
+			sprintf(char_arg, "./scheduler.out %d %d",ChosenSchedulingAlgorithm, Quantum);
 		else
-    		sprintf(char_arg, "./scheduler.out  %d",ChosenSchedulingAlgorithm);
+    		sprintf(char_arg, "./scheduler.out %d",ChosenSchedulingAlgorithm);
 		int Status = system(char_arg);
         exit(0);
     }
@@ -171,6 +172,8 @@ int main(int argc, char * argv[])
 			//Note: we will not need to make a semaphore here, as there is no situation that there is two processes will access the shared memory at the same time.
     	}
     	
+    	free(Temp);
+    	
     	if(NumberOfProcesses == 0)
     		break;
     }
@@ -184,6 +187,9 @@ int main(int argc, char * argv[])
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
+    //We Should free the processes
+    for(int i=0; i<NumberOfProcesses; i++)
+    	free(Processes[i]);
 	free(Processes);
 	destroyClk(true);
 }
