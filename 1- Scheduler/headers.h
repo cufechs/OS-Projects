@@ -24,6 +24,21 @@ int * shmaddr;                 //
 //===============================
 
 
+struct Process
+{
+	int ID;
+	int Arrival;
+	int Runtime;
+	int Priority;
+	int RemainingTime;
+};
+
+struct Node
+{
+	struct Node* Next;
+	struct Process* Value;
+};
+
 
 int getClk()
 {

@@ -1,24 +1,10 @@
 #include "headers.h"
 
 int shmid;
-Node* ReadyQueue = nullptr; //This is the start of the -Not Official- Linked List
-struct Process*** shmaddr;
+struct Node* ReadyQueue = NULL; //This is the start of the -Not Official- Linked List
+struct Process*** ProcSch_shmaddr;
 int SchedulingAlgorithm;
 
-struct Process
-{
-	int ID;
-	int Arrival;
-	int Runtime;
-	int Priority;
-	int RemainingTime;
-};
-
-struct Node
-{
-	Node* Next;
-	struct Process* Value;
-};
 
 /* Clear the resources before exit */
 void CleanUp(int signum)
@@ -31,33 +17,33 @@ void CleanUp(int signum)
 
 void ProcessArrived(int signum) //Process generator signals the scheduler that there is a process arrived and should be taken from the shared memory
 {
-	Node*Temp = ReadyQueue;
+	struct Node* Temp = ReadyQueue;
 	
 	int OldCount = 0;
-	while(Temp != nullptr)
+	while(Temp != NULL)
 	{
 		Temp = Temp->Next;
 		OldCount++;
 	}
 		
-	struct Process** Processes = *shmaddr;
+	struct Process** Processes = *ProcSch_shmaddr;
 	
 	int Counter = 0;
-	while(Processes[Counter] != nullptr)
+	while(Processes[Counter] != NULL)
 	{
-		Node* NewNode = (Node*)malloc(sizeof(Node));
-		NewNode->Next = nullptr;
-		NewNode->Value = *Processes[Counter];
-		*Temp = *NewNode;
-		Temp = *(Temp).Next;
+		struct Node* NewNode = (struct Node*)malloc(sizeof(struct Node));
+		NewNode->Next = NULL;
+		NewNode->Value = Processes[Counter];
+		Temp = NewNode;
+		Temp = Temp->Next;
 		
 		Counter++;
 	}
 	
 	if(SchedulingAlgorithm == 1) //HPF sorting
 	{
-		Node* Temp2 = ReadyQueue;
-		Node* Temp3 = ReadyQueue;
+		struct Node* Temp2 = ReadyQueue;
+		struct Node* Temp3 = ReadyQueue;
 		for(int i=0; i<(OldCount+Counter)-1; i++)
 		{
 			for(int j=i+1; j<(OldCount+Counter); j++)
@@ -81,7 +67,7 @@ int main(int argc, char * argv[])
 	signal(SIGUSR1, ProcessArrived);
 	signal(SIGINT, CleanUp);
 	
-	ReadyQueue = (Node*)malloc(sizeof(Node));
+	ReadyQueue = (struct Node*)malloc(sizeof(struct Node));
 	
 	//This shared memory is used for passing processes to the scheduler on arrival time
 	//Creating shared memory
@@ -89,8 +75,8 @@ int main(int argc, char * argv[])
     while ((long)shmid == -1)
         shmid = shmget(SHKEYPROCESS, 4096, 0644);
     
-    shmaddr = (struct Process***) shmat(shmid, (void *)0, 0);
-    if ((long)shmaddr == -1)
+    ProcSch_shmaddr = (struct Process***) shmat(shmid, (void *)0, 0);
+    if ((long)ProcSch_shmaddr == -1)
     {
         perror("Error in attaching the shm in clock!");
         exit(-1);
@@ -100,10 +86,11 @@ int main(int argc, char * argv[])
     
     //TODO implement the scheduler :)
     SchedulingAlgorithm = atoi(argv[1]); //Should be sent from outside
+	int Quantum = (SchedulingAlgorithm==0)? atoi(argv[2]) : 1; // get the quantum if RR
 	switch(SchedulingAlgorithm)
 	{
 		case 0: //RR
-			int Quantum = atoi(argv[2]);
+			
 			while(1)
 			{
 				

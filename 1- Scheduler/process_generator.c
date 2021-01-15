@@ -1,14 +1,5 @@
 #include "headers.h"
 
-struct Process
-{
-	int ID;
-	int Arrival;
-	int Runtime;
-	int Priority;
-	int RemainingTime;
-};
-
 struct Process** Processes; //Declared global to clean them upon interruption
 int shmid;
 struct Process*** ProcSch_shmaddr;
