@@ -93,10 +93,13 @@ int main(int argc, char * argv[])
     //Creating Scheduler here!
     int PID_SCHD = fork();
     if(PID_SCHD == 0){  //Forking the clock to start it and initalize it, without pausing this program
-    	if(ChosenSchedulingAlgorithm == 0)
-        	int Status = system("./scheduler.out %d %d", ChosenSchedulingAlgorithm, Qunatum);
-    	else
-    		int Status = system("./scheduler.out %d", ChosenSchedulingAlgorithm);
+    	
+		char char_arg [100];
+		if(ChosenSchedulingAlgorithm == 0)
+			sprintf(char_arg, "./scheduler.out  %d %d",ChosenSchedulingAlgorithm, Quantum);
+		else
+    		sprintf(char_arg, "./scheduler.out  %d",ChosenSchedulingAlgorithm);
+		int Status = system(char_arg);
         exit(0);
     }
     
