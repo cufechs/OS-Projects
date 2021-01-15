@@ -62,7 +62,7 @@ int main(int argc, char * argv[])
 			Processes[i]->Runtime = atoi(Word);
 			fscanf(pFile, "%s", Word);
 			Processes[i]->Priority = atoi(Word);
-			Processes[i]->RemainingTime = Processes[i].Runtime;
+			Processes[i]->RemainingTime = Processes[i]->Runtime;
       	}
     }
     else
@@ -140,7 +140,7 @@ int main(int argc, char * argv[])
         perror("Error in attaching the shm in process generator!");
         exit(-1);
     }
-    *ProcSch_shmaddr = nullptr; /* initialize shared memory */
+    *ProcSch_shmaddr = NULL; /* initialize shared memory */
     
     while(1)
     {
@@ -172,7 +172,7 @@ int main(int argc, char * argv[])
     	//How will the schdeuler know how man processes are there? there you go
     	if(Counter > 0)
     	{
-			Temp[Counter] = nullptr;
+			Temp[Counter] = NULL;
 			*ProcSch_shmaddr = Temp;
 			kill(PID_SCHD, SIGUSR1);
 			//Note: we will not need to make a semaphore here, as there is no situation that there is two processes will access the shared memory at the same time.
