@@ -11,7 +11,7 @@ struct Process
 
 struct Process** Processes; //Declared global to clean them upon interruption
 int shmid;
-struct Process*** shmaddr;
+struct Process*** ProcSch_shmaddr;
 
 void clearResources(int);
 
@@ -90,7 +90,7 @@ int main(int argc, char * argv[])
     
     // 3. Initiate and create the scheduler and clock processes.
     
-    //Create Scheduler here!
+    //Creating Scheduler here!
     int PID_SCHD = fork();
     if(PID_SCHD == 0){  //Forking the clock to start it and initalize it, without pausing this program
     	if(ChosenSchedulingAlgorithm == 0)
@@ -131,13 +131,13 @@ int main(int argc, char * argv[])
         exit(-1);
     }
     
-    shmaddr = (struct Process*) shmat(shmid, (void *)0, 0);
-    if ((long)shmaddr == -1)
+    ProcSch_shmaddr = (struct Process*) shmat(shmid, (void *)0, 0);
+    if ((long)ProcSch_shmaddr == -1)
     {
         perror("Error in attaching the shm in process generator!");
         exit(-1);
     }
-    *shmaddr = nullptr; /* initialize shared memory */
+    *ProcSch_shmaddr = nullptr; /* initialize shared memory */
     
     while(1)
     {
@@ -170,7 +170,7 @@ int main(int argc, char * argv[])
     	if(Counter > 0)
     	{
 			Temp[Counter] = nullptr;
-			*shmadr = Temp;
+			*ProcSch_shmaddr = Temp;
 			kill(PID_SCHD, SIGUSR1);
 			//Note: we will not need to make a semaphore here, as there is no situation that there is two processes will access the shared memory at the same time.
     	}
