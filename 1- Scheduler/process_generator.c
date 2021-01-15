@@ -48,7 +48,7 @@ int main(int argc, char * argv[])
     	{
     		Processes[i] = malloc(sizeof(struct Process));
 			fscanf(pFile, "%s", Word); //Read string at a time
-			Processes[i]->ID = atoi(word);
+			Processes[i]->ID = atoi(Word);
 			fscanf(pFile, "%s", Word);
 			Processes[i]->Arrival = atoi(Word);
 			fscanf(pFile, "%s", Word);
