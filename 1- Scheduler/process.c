@@ -21,8 +21,8 @@ void StopMe(int signum)
 
 int main(int agrc, char * argv[])
 {
-	singal(SIGCONT, WokeUp);
-	singal(SIGTSTP, StopMe);
+	signal(SIGCONT, WokeUp);
+	signal(SIGTSTP, StopMe);
 	int PID_SCHD = 0;
     initClk();
     Clock = getClk();

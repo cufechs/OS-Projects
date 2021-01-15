@@ -125,7 +125,7 @@ int main(int argc, char * argv[])
         exit(-1);
     }
     
-    ProcSch_shmaddr = (struct Process*) shmat(shmid, (void *)0, 0);
+    ProcSch_shmaddr = (struct Process***) shmat(shmid, (void *)0, 0);
     if ((long)ProcSch_shmaddr == -1)
     {
         perror("Error in attaching the shm in process generator!");
