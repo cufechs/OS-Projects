@@ -8,6 +8,7 @@ void clearResources(int);
 
 int main(int argc, char * argv[])
 {
+	printf("Noice\n");
     signal(SIGINT, clearResources);
     // TODO Initialization
     // 1. Read the input files.
@@ -42,11 +43,12 @@ int main(int argc, char * argv[])
       	char Word[20];
       	fgets(Word, 1000, pFile);
     
-    	Processes = malloc(sizeof(int) * 5 * NumberOfProcesses); //allocating memory for processes
+    	Processes = malloc(sizeof(struct Process*) * NumberOfProcesses); //allocating memory for processes
     	for(int i=0; i<NumberOfProcesses; i++) //Filling the processes
     	{
+    		Processes[i] = malloc(sizeof(struct Process));
 			fscanf(pFile, "%s", Word); //Read string at a time
-			Processes[i]->ID = atoi(Word);
+			Processes[i]->ID = atoi(word);
 			fscanf(pFile, "%s", Word);
 			Processes[i]->Arrival = atoi(Word);
 			fscanf(pFile, "%s", Word);
