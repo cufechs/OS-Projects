@@ -6,10 +6,12 @@ struct Process
 	int Arrival;
 	int Runtime;
 	int Priority;
+	int RemainingTime;
 };
 
-struct Process* Processes; //Declared global to clean them upon interruption
-bool ResourcesFreed = false;
+struct Process** Processes; //Declared global to clean them upon interruption
+int shmid;
+struct Process*** shmaddr;
 
 void clearResources(int);
 
@@ -49,22 +51,24 @@ int main(int argc, char * argv[])
       	char Word[20];
       	fgets(Word, 1000, pFile);
     
-    	Processes = malloc(sizeof(int) * 4 * NumberOfProcesses); //allocating memory for processes
+    	Processes = malloc(sizeof(int) * 5 * NumberOfProcesses); //allocating memory for processes
     	for(int i=0; i<NumberOfProcesses; i++) //Filling the processes
     	{
 			fscanf(pFile, "%s", Word); //Read string at a time
-			Processes[i].ID = atoi(Word);
+			Processes[i]->ID = atoi(Word);
 			fscanf(pFile, "%s", Word);
-			Processes[i].Arrival = atoi(Word);
+			Processes[i]->Arrival = atoi(Word);
 			fscanf(pFile, "%s", Word);
-			Processes[i].Runtime = atoi(Word);
+			Processes[i]->Runtime = atoi(Word);
 			fscanf(pFile, "%s", Word);
-			Processes[i].Priority = atoi(Word);
+			Processes[i]->Priority = atoi(Word);
+			Processes[i]->RemainingTime = Processes[i].Runtime;
       	}
     }
     else
     {
     	printf("procceses file doesn't exist!");
+    	return 0;
     }
     
     fclose(pFile);
@@ -87,6 +91,15 @@ int main(int argc, char * argv[])
     // 3. Initiate and create the scheduler and clock processes.
     
     //Create Scheduler here!
+    int PID_SCHD = fork();
+    if(PID_SCHD == 0){  //Forking the clock to start it and initalize it, without pausing this program
+    	if(ChosenSchedulingAlgorithm == 0)
+        	int Status = system("./scheduler.out %d %d", ChosenSchedulingAlgorithm, Qunatum);
+    	else
+    		int Status = system("./scheduler.out %d", ChosenSchedulingAlgorithm);
+        exit(0);
+    }
+    
    
     if(fork() == 0){  //Forking the clock to start it and initalize it, without pausing this program
         int Status = system("./clk.out");
@@ -109,21 +122,57 @@ int main(int argc, char * argv[])
     
     // 6. Send the information to the scheduler at the appropriate time.
     
+    //This shared memory is used for passing processes to the scheduler on arrival time
+	//Creating shared memory
+	shmid = shmget(SHKEYPROCESS, 4096, IPC_CREAT | 0644);
+    if ((long)shmid == -1)
+    {
+        perror("Error in creating shm!");
+        exit(-1);
+    }
+    
+    shmaddr = (struct Process*) shmat(shmid, (void *)0, 0);
+    if ((long)shmaddr == -1)
+    {
+        perror("Error in attaching the shm in process generator!");
+        exit(-1);
+    }
+    *shmaddr = nullptr; /* initialize shared memory */
     
     while(1)
     {
     	x = getClk();
-    	for(int i=0; i<NumberOfProcesses; i++) //Should I sleep if the arrival time is not the time of the clock?
+    	
+    	int Counter = 0;
+    	for(int i=0; i<NumberOfProcesses; i++)
+			if(Processes[i]->Arrival == x)
+				Counter++;
+    	
+    	struct Process** Temp = (struct Process**)malloc(sizeof(struct Process*)*(Counter+1));
+    	
+    	Counter = 0;
+    	for(int i=0; i<NumberOfProcesses; i++)
     	{
-			if(Processes[i].Arrival == x)
+			if(Processes[i]->Arrival == x)
 			{
 				/*
 				Here, scheduler takes the process at the appropriate arrival time //TODO
 				*/
 				printf("current time is %d\n", x);
+				
+				Temp[Counter++] = Processes[i];
 				NumberOfProcesses--;
 				Processes[i] = Processes[NumberOfProcesses]; //Decreasing the number of processes
 			}
+    	}
+    	
+    	//How will the schdeuler know how man processes are there? there you go
+    	if(Counter > 0)
+    	{
+			Temp[Counter] = nullptr;
+			*shmadr = Temp;
+			kill(PID_SCHD, SIGUSR1);
+			//Note: we will not need to make a semaphore here, as there is no situation that there is two processes will access the shared memory at the same time.
     	}
     	
     	if(NumberOfProcesses == 0)
@@ -131,9 +180,7 @@ int main(int argc, char * argv[])
     }
     
     // 7. Clear clock resources
-    free(Processes);
-    destroyClk(true);
-    ResourcesFreed = true;
+    clearResources(0);
     
     return 0;
 }
@@ -141,10 +188,6 @@ int main(int argc, char * argv[])
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
-    if(!ResourcesFreed)
-    {
-    	printf("LOOOL\n");
-		free(Processes);
-		destroyClk(true);
-    }
+	free(Processes);
+	destroyClk(true);
 }
