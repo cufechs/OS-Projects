@@ -9,7 +9,6 @@ void clearResources(int);
 
 int main(int argc, char * argv[])
 {
-	printf("Noice\n");
     signal(SIGINT, clearResources);
     // TODO Initialization
     // 1. Read the input files.
@@ -96,7 +95,6 @@ int main(int argc, char * argv[])
 		int Status = system(char_arg);
         exit(0);
     }
-    
    
     if(fork() == 0){  //Forking the clock to start it and initalize it, without pausing this program
         int Status = system("./clk.out");
@@ -157,6 +155,7 @@ int main(int argc, char * argv[])
 				*/
 				printf("current time is %d\n", x);
 				
+				//Temp[Counter] = (struct Process*)malloc(sizeof(struct Process));
 				Temp[Counter++] = Processes[i];
 				NumberOfProcesses--;
 				Processes[i] = Processes[NumberOfProcesses]; //Decreasing the number of processes

@@ -25,6 +25,9 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 		Temp = Temp->Next;
 		OldCount++;
 	}
+	
+	if(Temp == NULL)
+		ReadyQueue = (struct Node*)malloc(sizeof(struct Node));
 		
 	struct Process** Processes = *ProcSch_shmaddr;
 	
@@ -33,7 +36,9 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 	{
 		struct Node* NewNode = (struct Node*)malloc(sizeof(struct Node));
 		NewNode->Next = NULL;
-		NewNode->Value = Processes[Counter];
+		NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
+		*(NewNode->Value) = *(Processes[Counter]);
+		
 		Temp = NewNode;
 		Temp = Temp->Next;
 		
@@ -45,8 +50,6 @@ int main(int argc, char * argv[])
 {
 	signal(SIGUSR1, ProcessArrived);
 	signal(SIGINT, CleanUp);
-	
-	ReadyQueue = (struct Node*)malloc(sizeof(struct Node));
 	
 	//This shared memory is used for passing processes to the scheduler on arrival time
 	//Creating shared memory
@@ -102,7 +105,6 @@ int main(int argc, char * argv[])
 						if(PID == 0)
 						{
 							char char_arg[100]; 
-							printf("Noice");
 							sprintf(char_arg, "./process.out %d %d", BestPriority->Value->Runtime, getppid());
 							int Status = system(char_arg);
 							exit(0);
