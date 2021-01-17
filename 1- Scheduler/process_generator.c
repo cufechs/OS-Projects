@@ -66,6 +66,7 @@ int main(int argc, char * argv[])
 			fscanf(pFile, "%s", Word);
 			Processes[i]->Priority = atoi(Word);
 			Processes[i]->RemainingTime = Processes[i]->Runtime;
+			Processes[i]->generated = false;
       	}
     }
     else

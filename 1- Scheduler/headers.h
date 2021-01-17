@@ -35,6 +35,10 @@ struct Process
 	int Runtime;
 	int Priority;
 	int RemainingTime;
+    int finishTime;
+
+    pid_t pid;
+    bool generated;
 };
 
 struct Node
