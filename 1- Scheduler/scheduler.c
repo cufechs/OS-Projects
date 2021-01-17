@@ -61,8 +61,7 @@ int main(int argc, char * argv[])
 						struct Node* BestPriority = ReadyQueue;
 						struct Node* Temp = ReadyQueue;
 						
-						while(Temp != NULL)
-						{
+						while(Temp != NULL){
 							if(Temp->Value->Priority < BestPriority->Value->Priority)
 								BestPriority = Temp;
 								
@@ -87,6 +86,8 @@ int main(int argc, char * argv[])
 						int stat_loc;
 						waitpid(PID, &stat_loc, 0);
 						if(WIFEXITED(stat_loc)){}
+
+						runningProcess = NULL;
 						
 						printf(":)\n");
 						//Archive
@@ -127,8 +128,6 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 	NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
 	*NewNode->Value = *shmadr_PG1;
 
-	printf("Hi from Sched\n");
-
 	printf("-- Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
 	 NewNode->Value->ID, NewNode->Value->Arrival, NewNode->Value->Runtime, NewNode->Value->Priority);
 
@@ -145,7 +144,6 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 	}
 
 	Temp->Next = NewNode;
-
 	up(semid_PG1);
 }
 
