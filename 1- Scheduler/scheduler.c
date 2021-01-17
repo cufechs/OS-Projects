@@ -152,7 +152,7 @@ void removeFromReadyQueue(struct Node* node){
 	struct Node* temp = ReadyQueue;
 
 	if(node == ReadyQueue){
-		ReadyQueue == NULL;
+		ReadyQueue = ReadyQueue->Next;
 		node->Next = NULL;
 		return;
 	}
