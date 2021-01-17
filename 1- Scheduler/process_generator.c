@@ -1,11 +1,25 @@
 #include "headers.h"
 
 struct Process** Processes; //Declared global to clean them upon interruption
-int shmid;
-struct Process*** ProcSch_shmaddr;
+
 int NumberOfProcesses;
 
+
+int shmid_PG1;
+struct Process*** shmadr_PG1;
+int shmid_PG2;
+pid_t* shmadr_PG2;
+int msgqid_PG1;
+int semid_PG1;
+
+union Semun semun;
+struct msgbuff message;
+
+
+
 void clearResources(int);
+void createAttachResources();
+
 
 int main(int argc, char * argv[])
 {
@@ -84,8 +98,9 @@ int main(int argc, char * argv[])
     // 3. Initiate and create the scheduler and clock processes.
     
     //Creating Scheduler here!
-    int PID_SCHD = fork();
-    if(PID_SCHD == 0){  //Forking the clock to start it and initalize it, without pausing this program
+	createAttachResources();
+    
+    if(fork() == 0){  //Forking the clock to start it and initalize it, without pausing this program
     	
 		char char_arg [100];
 		if(ChosenSchedulingAlgorithm == 0)
@@ -119,20 +134,15 @@ int main(int argc, char * argv[])
     
     //This shared memory is used for passing processes to the scheduler on arrival time
 	//Creating shared memory
-	shmid = shmget(SHKEYPROCESS, 4096, IPC_CREAT | 0644);
-    if ((long)shmid == -1)
-    {
-        perror("Error in creating shm!");
-        exit(-1);
-    }
-    
-    ProcSch_shmaddr = (struct Process***) shmat(shmid, (void *)0, 0);
-    if ((long)ProcSch_shmaddr == -1)
-    {
-        perror("Error in attaching the shm in process generator!");
-        exit(-1);
-    }
-    *ProcSch_shmaddr = NULL; /* initialize shared memory */
+
+	
+
+    *shmadr_PG1 = NULL; /* initialize shared memory */
+	down(semid_PG1);
+	int PID_SCHD = *shmadr_PG2;
+	
+	printf("OK2, pid: %d\n", PID_SCHD);
+
     
     while(1)
     {
@@ -156,22 +166,25 @@ int main(int argc, char * argv[])
 				printf("current time is %d\n", x);
 				
 				//Temp[Counter] = (struct Process*)malloc(sizeof(struct Process));
-				Temp[Counter++] = Processes[i];
+				Temp[Counter] = Processes[i];
 				NumberOfProcesses--;
 				Processes[i] = Processes[NumberOfProcesses]; //Decreasing the number of processes
+				Counter += 1;
 			}
     	}
     	
     	//How will the schdeuler know how man processes are there? there you go
-    	if(Counter > 0)
-    	{
+    	if(Counter > 0)	{
+			printf("Hi from PG");
 			Temp[Counter] = NULL;
-			*ProcSch_shmaddr = Temp;
+			*shmadr_PG1 = Temp;
+			
 			kill(PID_SCHD, SIGUSR1);
+			down(semid_PG1);
 			//Note: we will not need to make a semaphore here, as there is no situation that there is two processes will access the shared memory at the same time.
     	}
     	
-    	free(Temp);
+    	//free(Temp);
     	
     	if(NumberOfProcesses == 0)
     		break;
@@ -191,4 +204,46 @@ void clearResources(int signum)
     	free(Processes[i]);
 	free(Processes);
 	destroyClk(true);
+}
+
+void createAttachResources(){
+	msgqid_PG1 = msgget(320, 0666 | IPC_CREAT);
+	if ((long)msgqid_PG1 == -1){
+        perror("Error in creating msg q! in process generator!");
+        exit(-1);
+    }
+
+	shmid_PG1 = shmget(321, 4096, IPC_CREAT | 0666);
+    if ((long)shmid_PG1 == -1){
+        perror("Error in creating shm! in process generator!");
+        exit(-1);
+    }
+    shmadr_PG1 = (struct Process***) shmat(shmid_PG1, (void *)0, 0);
+    if ((long)shmadr_PG1 == -1){
+        perror("Error in attaching the shm in process generator!");
+        exit(-1);
+    }
+	
+	shmid_PG2 = shmget(1279456, sizeof(pid_t), IPC_CREAT | 0666);
+    if ((long)shmid_PG2 == -1){
+        perror("Error in creating shm! in process generator!");
+        exit(-1);
+    }
+    shmadr_PG2 = (pid_t*) shmat(shmid_PG2, (void *)0, 0);
+    if ((long)shmadr_PG2 == -1){
+        perror("Error in attaching the shm in process generator!");
+        exit(-1);
+    }
+
+	semid_PG1 = semget(3223234, 1, 0666 | IPC_CREAT);
+	if ((long)shmadr_PG1 == -1){
+        perror("Error in creating sem! in process generator!");
+        exit(-1);
+    }
+	union Semun semun;
+	semun.val = 0; /* initial value of the semaphore, Binary semaphore */
+    if (semctl(semid_PG1, 0, SETVAL, semun) == -1){
+        perror("Error in semaphore");
+        exit(-1);
+    }
 }
