@@ -15,9 +15,9 @@ typedef short bool;
 #define true 1
 #define false 0
 
-#define SHKEY ftok("header.h", 300)
-#define SHKEYPROCESS1 ftok("header.h", 301)
-#define SHKEYPROCESS2 ftok("header.h", 302)
+#define SHKEY 300
+#define SHKEYPROCESS1 301
+#define SHKEYPROCESS2 332
 
 
 
@@ -26,6 +26,7 @@ typedef short bool;
 int * shmaddr;                 //
 //===============================
 
+enum Algo{RR, HPF, SRTN};
 
 struct Process
 {
@@ -34,6 +35,10 @@ struct Process
 	int Runtime;
 	int Priority;
 	int RemainingTime;
+    int finishTime;
+
+    pid_t pid;
+    bool generated;
 };
 
 struct Node

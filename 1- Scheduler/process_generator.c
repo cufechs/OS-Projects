@@ -6,7 +6,7 @@ int NumberOfProcesses;
 
 
 int shmid_PG1;
-struct Process** shmadr_PG1;
+struct Process* shmadr_PG1;
 int shmid_PG2;
 pid_t* shmadr_PG2;
 int semid_PG1;
@@ -22,9 +22,7 @@ void createAttachResources();
 int main(int argc, char * argv[])
 {
     signal(SIGINT, clearResources);
-    // TODO Initialization
-    // 1. Read the input files.
-    
+
     FILE * pFile; //Openning the procceses file for reading
     pFile = fopen("processes.txt", "r");
     
@@ -68,6 +66,7 @@ int main(int argc, char * argv[])
 			fscanf(pFile, "%s", Word);
 			Processes[i]->Priority = atoi(Word);
 			Processes[i]->RemainingTime = Processes[i]->Runtime;
+			Processes[i]->generated = false;
       	}
     }
     else
@@ -131,9 +130,11 @@ int main(int argc, char * argv[])
 			if(Processes[i]->Arrival == my_clk){
 				//printf("Hi from PG\n");
 				
-				*shmadr_PG1 = Processes[i];
+				*shmadr_PG1 = *Processes[i];
+				
 				//printf("-%p- PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
 				//shmadr_PG1,(*shmadr_PG1)->ID, (*shmadr_PG1)->Arrival, (*shmadr_PG1)->Runtime, (*shmadr_PG1)->Priority);
+				printf("Noice1\n");
 				kill(PID_SCHD, SIGUSR1);
 
 				NumberOfProcesses--;
@@ -165,12 +166,12 @@ void clearResources(int signum)
 
 void createAttachResources(){
 
-	shmid_PG1 = shmget(321231, sizeof(struct Process*), IPC_CREAT | 0666);
+	shmid_PG1 = shmget(SHKEYPROCESS2, sizeof(struct Process), IPC_CREAT | 0666);
     if ((long)shmid_PG1 == -1){
         perror("Error in creating shm! in process generator!");
         exit(-1);
     }
-    shmadr_PG1 = (struct Process**) shmat(shmid_PG1, (void *)0, 0);
+    shmadr_PG1 = (struct Process*)shmat(shmid_PG1, (void *)0, 0);
     if ((long)shmadr_PG1 == -1){
         perror("Error in attaching the shm in process generator!");
         exit(-1);
