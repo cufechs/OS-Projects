@@ -20,17 +20,18 @@ int main(int agrc, char * argv[])
 	attachResources();
 
 	*shmadr_SCH1 = getpid();
+    printf("OK1, pid: %d\n", *shmadr_SCH1);
 	up(semid_SHC1);
 
     initClk();
     Clock = getClk();
     //TODO it needs to get the remaining time from somewhere
     remainingtime = atoi(argv[1]); //We should use shared memory to get the remaining time of the process
-    while (remainingtime > 0)
-    {
+    printf("will run for %d sec.", remainingtime);
+    
+    while (remainingtime > 0){
     	//Semaphore
-    	if(getClk() - Clock == 1)
-    	{
+    	if(getClk() - Clock == 1){
     		remainingtime--;
     		Clock = getClk();
     	}
@@ -78,6 +79,4 @@ void attachResources(){
         perror("Error in creating sem! in Scheduler!");
         exit(-1);
     }
-
-	shmadr_SCH1 = (pid_t*) malloc(sizeof(pid_t));
 }

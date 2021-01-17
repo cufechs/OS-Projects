@@ -39,6 +39,7 @@ int main(int argc, char * argv[])
     *shmaddr = clk; /* initialize shared memory */
     while (1)
     {
+        printf("current (CLK) time is %d\n", *shmaddr);
         sleep(1);
         (*shmaddr)++;
     }

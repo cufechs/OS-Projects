@@ -6,17 +6,13 @@ int SchedulingAlgorithm;
 
 
 int shmid_PG1;
-struct Process*** shmadr_PG1;
+struct Process* shmadr_PG1;
 int shmid_PG2;
 pid_t* shmadr_PG2;
 int shmid_SCH1;
 pid_t* shmadr_SCH1;
-int msgqid_PG1;
 int semid_PG1;
 int semid_SHC1;
-
-
-struct msgbuff message;
 
 void CleanUp(int signum);
 void createAttachResources();
@@ -32,11 +28,8 @@ int main(int argc, char * argv[])
 	
 	createAttachResources();
 
-	//shmadr_PG2 = (pid_t*) malloc(sizeof(pid_t));
 	*shmadr_PG2 = getpid();
-
 	printf("OK1, pid: %d\n", *shmadr_PG2);
-
 	up(semid_PG1);
 
 
@@ -89,8 +82,8 @@ int main(int argc, char * argv[])
 						}
 
 						down(semid_SHC1);
-						
 						int PID = *shmadr_SCH1;
+						printf("OK2, pid: %d\n", PID);
 						
 						int stat_loc;
 						waitpid(PID, &stat_loc, 0);
@@ -125,34 +118,30 @@ int main(int argc, char * argv[])
 
 void ProcessArrived(int signum) //Process generator signals the scheduler that there is a process arrived and should be taken from the shared memory
 {
-	printf("Hi from Sched");
+	printf("Hi from Sched\n");
 
+	struct Node* NewNode = (struct Node*)malloc(sizeof(struct Node));
+	NewNode->Next = NULL;
+	NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
+	*(NewNode->Value) = *shmadr_PG1;
+
+	printf("Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
+	 shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
+
+	if(ReadyQueue == NULL){
+		ReadyQueue = NewNode;
+		up(semid_PG1);
+		return;
+	}
+	
 	struct Node* Temp = ReadyQueue;
 	
-	int OldCount = 0;
-	while(Temp != NULL)
-	{
+	while(Temp->Next != NULL){
 		Temp = Temp->Next;
-		OldCount++;
 	}
-	
-	if(Temp == NULL)
-		ReadyQueue = (struct Node*)malloc(sizeof(struct Node));
-		
-	struct Process** Processes = *shmadr_PG1;
-	
-	int Counter = 0;
-	while(Processes[Counter] != NULL){ 
-		struct Node* NewNode = (struct Node*)malloc(sizeof(struct Node));
-		NewNode->Next = NULL;
-		NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
-		*(NewNode->Value) = *(Processes[Counter]);
-		
-		Temp = NewNode;
-		Temp = Temp->Next;
-		
-		Counter++;
-	}
+
+	Temp->Next = NewNode;
+
 	up(semid_PG1);
 }
 
@@ -185,18 +174,13 @@ void CleanUp(int signum)
 }
 
 void createAttachResources(){
-	msgqid_PG1 = msgget(320, 0666);
-	if ((long)msgqid_PG1 == -1){
-        perror("Error in creating msg q! in process generator!");
-        exit(-1);
-    }
 
 	shmid_PG1 = shmget(321, 4096, 0666);
     if ((long)shmid_PG1 == -1){
         perror("Error in creating shm! in Scheduler!");
         exit(-1);
     }
-    shmadr_PG1 = (struct Process***) shmat(shmid_PG1, (void *)0, 0);
+    shmadr_PG1 = (struct Process*) shmat(shmid_PG1, (void *)0, 0);
     if ((long)shmadr_PG1 == -1){
         perror("Error in attaching the shm in Scheduler!");
         exit(-1);

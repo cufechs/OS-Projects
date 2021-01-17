@@ -6,14 +6,12 @@ int NumberOfProcesses;
 
 
 int shmid_PG1;
-struct Process*** shmadr_PG1;
+struct Process* shmadr_PG1;
 int shmid_PG2;
 pid_t* shmadr_PG2;
-int msgqid_PG1;
 int semid_PG1;
 
 union Semun semun;
-struct msgbuff message;
 
 
 
@@ -82,7 +80,7 @@ int main(int argc, char * argv[])
     
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     
-    int ChosenSchedulingAlgorithm = 0, Quantum = 0;
+    int ChosenSchedulingAlgorithm = 0, Quantum = 1;
     
     printf("Scheduling Algorithm:\nFor Round Robin Enter 0\nFor Highest Priority First Enter 1\nFor Shortest Remaining Time Enter 2\n");
     
@@ -95,9 +93,6 @@ int main(int argc, char * argv[])
 		scanf("%d", &Quantum);
     }
     
-    // 3. Initiate and create the scheduler and clock processes.
-    
-    //Creating Scheduler here!
 	createAttachResources();
     
     if(fork() == 0){  //Forking the clock to start it and initalize it, without pausing this program
@@ -116,75 +111,37 @@ int main(int argc, char * argv[])
         exit(0);
     }
     
-    // 4. Use this function after creating the clock process to initialize clock
     
-    initClk();
+    initClk();    
+    int my_clk;
     
-    // To get time use this
-    
-    int x = getClk();
-    printf("current time is %d\n", x);
-    
-    // TODO Generation Main Loop
-    // 5. Create a data structure for processes and provide it with its parameters.
-    
-    //This is already done above!
-    
-    // 6. Send the information to the scheduler at the appropriate time.
-    
-    //This shared memory is used for passing processes to the scheduler on arrival time
-	//Creating shared memory
-
 	
-
-    *shmadr_PG1 = NULL; /* initialize shared memory */
-	down(semid_PG1);
+    shmadr_PG1 = NULL; /* initialize shared memory */
+	down(semid_PG1); // to recive scheduler pid
 	int PID_SCHD = *shmadr_PG2;
 	
 	printf("OK2, pid: %d\n", PID_SCHD);
 
     
-    while(1)
-    {
-    	x = getClk();
+    while(1){
+    	my_clk = getClk();
     	
-    	int Counter = 0;
-    	for(int i=0; i<NumberOfProcesses; i++)
-			if(Processes[i]->Arrival == x)
-				Counter++;
-    	
-    	struct Process** Temp = (struct Process**)malloc(sizeof(struct Process*)*(Counter+1));
-    	
-    	Counter = 0;
     	for(int i=0; i<NumberOfProcesses; i++)
     	{
-			if(Processes[i]->Arrival == x)
-			{
-				/*
-				Here, scheduler takes the process at the appropriate arrival time //TODO
-				*/
-				printf("current time is %d\n", x);
+			if(Processes[i]->Arrival == my_clk){
+				printf("Hi from PG\n");
 				
-				//Temp[Counter] = (struct Process*)malloc(sizeof(struct Process));
-				Temp[Counter] = Processes[i];
+				*shmadr_PG1 = *Processes[i];
+				printf("PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
+				shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
+				kill(PID_SCHD, SIGUSR1);
+
 				NumberOfProcesses--;
 				Processes[i] = Processes[NumberOfProcesses]; //Decreasing the number of processes
-				Counter += 1;
+				
+				down(semid_PG1);
 			}
     	}
-    	
-    	//How will the schdeuler know how man processes are there? there you go
-    	if(Counter > 0)	{
-			printf("Hi from PG");
-			Temp[Counter] = NULL;
-			*shmadr_PG1 = Temp;
-			
-			kill(PID_SCHD, SIGUSR1);
-			down(semid_PG1);
-			//Note: we will not need to make a semaphore here, as there is no situation that there is two processes will access the shared memory at the same time.
-    	}
-    	
-    	//free(Temp);
     	
     	if(NumberOfProcesses == 0)
     		break;
@@ -207,18 +164,13 @@ void clearResources(int signum)
 }
 
 void createAttachResources(){
-	msgqid_PG1 = msgget(320, 0666 | IPC_CREAT);
-	if ((long)msgqid_PG1 == -1){
-        perror("Error in creating msg q! in process generator!");
-        exit(-1);
-    }
 
 	shmid_PG1 = shmget(321, 4096, IPC_CREAT | 0666);
     if ((long)shmid_PG1 == -1){
         perror("Error in creating shm! in process generator!");
         exit(-1);
     }
-    shmadr_PG1 = (struct Process***) shmat(shmid_PG1, (void *)0, 0);
+    shmadr_PG1 = (struct Process*) shmat(shmid_PG1, (void *)0, 0);
     if ((long)shmadr_PG1 == -1){
         perror("Error in attaching the shm in process generator!");
         exit(-1);
@@ -246,4 +198,6 @@ void createAttachResources(){
         perror("Error in semaphore");
         exit(-1);
     }
+
+	shmadr_PG1 = (struct Process*) malloc(sizeof(struct Process));
 }
