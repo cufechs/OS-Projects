@@ -6,7 +6,7 @@ int SchedulingAlgorithm;
 
 
 int shmid_PG1;
-struct Process* shmadr_PG1;
+struct Process** shmadr_PG1;
 int shmid_PG2;
 pid_t* shmadr_PG2;
 int shmid_SCH1;
@@ -53,10 +53,9 @@ int main(int argc, char * argv[])
 			}
 			break;
 		case 1: //HPF
-			while(1)
-			{
-				if(getClk() - PrevClk > 1)
-				{
+			while(1){
+
+				//if(getClk() - PrevClk > 1){
 					if(ReadyQueue != NULL) {
 
 						struct Node* BestPriority = ReadyQueue;
@@ -95,7 +94,7 @@ int main(int argc, char * argv[])
 					}
 					
 					PrevClk = getClk();
-				}
+				//}
 			}
 			break;
 		case 2: //SRTN
@@ -118,15 +117,17 @@ int main(int argc, char * argv[])
 
 void ProcessArrived(int signum) //Process generator signals the scheduler that there is a process arrived and should be taken from the shared memory
 {
-	printf("Hi from Sched\n");
+	printf("Hi from Sched, -%p-\n", shmadr_PG1);
 
 	struct Node* NewNode = (struct Node*)malloc(sizeof(struct Node));
 	NewNode->Next = NULL;
 	NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
-	*(NewNode->Value) = *shmadr_PG1;
+	*NewNode->Value = **shmadr_PG1;
 
-	printf("Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
-	 shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
+	printf("Hi from Sched\n");
+
+	printf("-- Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
+	 NewNode->Value->ID, NewNode->Value->Arrival, NewNode->Value->Runtime, NewNode->Value->Priority);
 
 	if(ReadyQueue == NULL){
 		ReadyQueue = NewNode;
@@ -175,12 +176,12 @@ void CleanUp(int signum)
 
 void createAttachResources(){
 
-	shmid_PG1 = shmget(321, 4096, 0666);
+	shmid_PG1 = shmget(321231, sizeof(struct Process*), 0666);
     if ((long)shmid_PG1 == -1){
         perror("Error in creating shm! in Scheduler!");
         exit(-1);
     }
-    shmadr_PG1 = (struct Process*) shmat(shmid_PG1, (void *)0, 0);
+    shmadr_PG1 = (struct Process**) shmat(shmid_PG1, (void *)0, 0);
     if ((long)shmadr_PG1 == -1){
         perror("Error in attaching the shm in Scheduler!");
         exit(-1);

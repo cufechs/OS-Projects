@@ -27,7 +27,7 @@ int main(int agrc, char * argv[])
     Clock = getClk();
     //TODO it needs to get the remaining time from somewhere
     remainingtime = atoi(argv[1]); //We should use shared memory to get the remaining time of the process
-    printf("will run for %d sec.", remainingtime);
+    printf("will run for %d sec.\n", remainingtime);
     
     while (remainingtime > 0){
     	//Semaphore
@@ -41,7 +41,7 @@ int main(int agrc, char * argv[])
     //Sempahore
     
     int PID_SCHD = atoi(argv[2]);
-    kill(PID_SCHD, SIGUSR2);
+    //kill(PID_SCHD, SIGUSR2);
     destroyClk(false);
     
 	exit(0);
