@@ -18,6 +18,8 @@ int shmid_SCH1;
 pid_t* shmadr_SCH1;
 int semid_PG1;
 int semid_SHC1;
+int semid_CLK;
+int semid_PG_CLK;
 
 void CleanUp(int signum);
 void createAttachResources();
@@ -51,8 +53,9 @@ int main(int argc, char * argv[])
 	switch(SchedulingAlgorithm)
 	{
 		case RR:
-			while(1)
-			{
+			while(1){
+				//down(semid_PG_CLK);
+
 				if(getClk() - PrevClk > 1)
 				{
 					
@@ -63,6 +66,7 @@ int main(int argc, char * argv[])
 			break;
 		case HPF:
 			while(1){
+				//down(semid_PG_CLK);
 
 				if(ReadyQueue != NULL) {
 
@@ -98,8 +102,8 @@ int main(int argc, char * argv[])
 			}
 			break;
 		case SRTN:
-			while(1)
-			{
+			while(1){
+				//down(semid_PG_CLK);
 				//if(getClk() - PrevClk > 1){
 					if(runningProcess == NULL){
 						if(ReadyQueue != NULL){
@@ -111,14 +115,17 @@ int main(int argc, char * argv[])
 									int Status = system(char_arg);
 									exit(0);
 								}
-
+								
 								down(semid_SHC1);
 								int PID = *shmadr_SCH1;
 								//printf("OK2, pid: %d\n", PID);
 								ReadyQueue->Value->pid = PID;
+								ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
+								printf("clk: %d \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
 							}
 							else{
 								kill(ReadyQueue->Value->pid, SIGCONT);
+								printf("clk: %d \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
 							}
 
 							runningProcess = ReadyQueue->Value;
@@ -140,19 +147,24 @@ int main(int argc, char * argv[])
 						int PID = *shmadr_SCH1;
 						//printf("OK2, pid: %d\n", PID);
 						ReadyQueue->Value->pid = PID;
+						ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
+
+						printf("clk: %d \t Context Switching: ID: %d will run, ID: %d will sleep.\n",getClk(), ReadyQueue->Value->ID, runningProcess->ID);
 
 						struct Process* tempRQ = ReadyQueue->Value;
 						ReadyQueue->Value = runningProcess;
 						runningProcess = tempRQ;
 						runningProcess->generated = true;
+
+						preemption_flag = false;
 					}
-					else if(runningProcess != NULL){
+					else if(runningProcess != NULL && (getClk() - PrevClk) >= 1){
 						runningProcess->RemainingTime -= 1;
 					}
 
 					
 					
-				//	PrevClk = getClk();
+					PrevClk = getClk();
 				//}
 			}
 			break;
@@ -170,7 +182,7 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 	NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
 	*(NewNode->Value) = *((struct Process*)shmadr_PG1);
 
-	printf("Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
+	printf("clk: %d \t Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n", getClk(),
 	 NewNode->Value->ID, NewNode->Value->Arrival, NewNode->Value->Runtime, NewNode->Value->Priority);
 
 	if(SchedulingAlgorithm == HPF || SchedulingAlgorithm == RR){
@@ -192,6 +204,16 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 		return;
 	}
 	else if(SchedulingAlgorithm == SRTN){
+
+		if(runningProcess != NULL){
+			if(NewNode->Value->Runtime < runningProcess->RemainingTime){
+				NewNode->Next = ReadyQueue;
+				ReadyQueue = NewNode;
+				preemption_flag = true;
+				up(semid_PG1);
+				return;
+			}
+		}
 		
 		if(ReadyQueue == NULL){
 			ReadyQueue = NewNode;
@@ -200,15 +222,6 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 		}
 		
 		struct Node* Temp = ReadyQueue;
-
-
-		if(NewNode->Value->Runtime < runningProcess->Runtime){
-			NewNode->Next = ReadyQueue;
-			ReadyQueue = NewNode;
-			preemption_flag = true;
-			up(semid_PG1);
-			return;
-		}
 
 		if(NewNode->Value->Runtime < ReadyQueue->Value->Runtime){
 			NewNode->Next = ReadyQueue;
@@ -234,9 +247,9 @@ void ProcessFinished(int signum){
 
 	addToArchive(runningProcess);
 
-	runningProcess = NULL;
+	printf("clk: %d \t Procces %d has finished :)\n", runningProcess->finishTime, runningProcess->ID);
 
-	printf("A procces has finished :)\n");
+	runningProcess = NULL;
 }
 
 void addToArchive(struct Process* proc){
@@ -350,6 +363,18 @@ void createAttachResources(){
 	semun.val = 0; /* initial value of the semaphore, Binary semaphore */
     if (semctl(semid_SHC1, 0, SETVAL, semun) == -1){
         perror("Error in semaphore");
+        exit(-1);
+    }
+
+	semid_CLK = semget(980923, 1, 0666);
+	if ((long)semid_CLK == -1){
+        perror("Error in creating sem! in Sch!");
+        exit(-1);
+    }
+
+	semid_PG_CLK = semget(345645, 1, 0666);
+	if ((long)semid_PG_CLK == -1){
+        perror("Error in creating sem! in sch!");
         exit(-1);
     }
 }

@@ -3,6 +3,7 @@
 /* Modify this file as needed*/
 int remainingtime;
 int Clock;
+int PID_SCHD;
 
 int shmid_SCH1;
 pid_t* shmadr_SCH1;
@@ -27,12 +28,13 @@ int main(int agrc, char * argv[])
     Clock = getClk();
     //TODO it needs to get the remaining time from somewhere
     remainingtime = atoi(argv[1]); //We should use shared memory to get the remaining time of the process
-    printf("will run for %d sec.\n", remainingtime);
+    //printf("will run for %d sec.\n", remainingtime);
     
     while (remainingtime > 0){
     	//Semaphore
     	if(getClk() - Clock == 1){
     		remainingtime--;
+            //printf("1 Sec passed and my remaining time: %d,,,,,clock %d\n",remainingtime, getClk());
     		Clock = getClk();
     	}
     }
@@ -40,7 +42,7 @@ int main(int agrc, char * argv[])
     //We should notify the scheduler that this process finished TODO
     //Sempahore
     
-    int PID_SCHD = atoi(argv[2]);
+    PID_SCHD = atoi(argv[2]);
     kill(PID_SCHD, SIGUSR2);
     destroyClk(false);
     
@@ -50,15 +52,20 @@ int main(int agrc, char * argv[])
 
 void WokeUp(int signum){
 	//TODO
+    printf("clk: %d \t I am resuming and my remaining time: %d\n", getClk(),remainingtime);
 	Clock = getClk();
 }
 
 void StopMe(int signum){
+
 	if(getClk() - Clock == 1)
 		remainingtime--;
 		
-	if(remainingtime > 0)
-		kill(SIGSTOP, getpid());
+    printf("clk: %d \t I am stopped and my remaining time: %d\n", getClk(), remainingtime);
+
+	if(remainingtime > 0){
+		kill(getpid(), SIGSTOP);
+    }
 }
 
 void attachResources(){

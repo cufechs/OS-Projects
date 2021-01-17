@@ -11,6 +11,8 @@ struct Process* shmadr_PG1;
 int shmid_PG2;
 pid_t* shmadr_PG2;
 int semid_PG1;
+int semid_PG_CLK;
+int semid_CLK;
 
 union Semun semun;
 
@@ -124,8 +126,10 @@ int main(int argc, char * argv[])
 
     
     while(1){
+		down(semid_CLK);
     	my_clk = getClk();
-    	
+		//up(semid_PG_CLK);
+
     	for(int i=0; i<NumberOfProcesses; i++)
     	{
 			if(Processes[i]->Arrival == my_clk){
@@ -133,8 +137,8 @@ int main(int argc, char * argv[])
 				
 				*shmadr_PG1 = *Processes[i];
 				
-				printf("PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
-				shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
+				//printf("PG send: id: %d, arr: %d, runtime: %d, p: %d. \t\t clk: %d\n",
+				//shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority, my_clk);
 				kill(PID_SCHD, SIGUSR1);
 
 				totalRunTime += totalRunTime==0? shmadr_PG1->Arrival + shmadr_PG1->Runtime : shmadr_PG1->Runtime;
@@ -152,7 +156,7 @@ int main(int argc, char * argv[])
     
 	totalRunTime = (totalRunTime > Processes[0]->Arrival + Processes[0]->Runtime)? totalRunTime : Processes[0]->Arrival + Processes[0]->Runtime;
 
-	sleep(totalRunTime - getClk() + 5);
+	sleep((totalRunTime - getClk()) + 5);
     
     clearResources(0);
     
@@ -201,6 +205,28 @@ void createAttachResources(){
 	union Semun semun;
 	semun.val = 0; /* initial value of the semaphore, Binary semaphore */
     if (semctl(semid_PG1, 0, SETVAL, semun) == -1){
+        perror("Error in semaphore");
+        exit(-1);
+    }
+
+	semid_CLK = semget(980923, 1, IPC_CREAT | 0666);
+	if ((long)semid_CLK == -1){
+        perror("Error in creating sem! in process generator!");
+        exit(-1);
+    }
+	semun.val = 0; /* initial value of the semaphore, Binary semaphore */
+    if (semctl(semid_CLK, 0, SETVAL, semun) == -1){
+        perror("Error in semaphore");
+        exit(-1);
+    }
+
+	semid_PG_CLK = semget(345645, 1, IPC_CREAT | 0666);
+	if ((long)semid_PG_CLK == -1){
+        perror("Error in creating sem! in process generator!");
+        exit(-1);
+    }
+	semun.val = 0; /* initial value of the semaphore, Binary semaphore */
+    if (semctl(semid_PG_CLK, 0, SETVAL, semun) == -1){
         perror("Error in semaphore");
         exit(-1);
     }
