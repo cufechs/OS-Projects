@@ -115,7 +115,7 @@ int main(int argc, char * argv[])
     int my_clk;
     
 	
-    shmadr_PG1 = NULL; /* initialize shared memory */
+    //shmadr_PG1 = NULL; /* initialize shared memory */
 	down(semid_PG1); // to recive scheduler pid
 	int PID_SCHD = *shmadr_PG2;
 	
@@ -128,11 +128,13 @@ int main(int argc, char * argv[])
     	for(int i=0; i<NumberOfProcesses; i++)
     	{
 			if(Processes[i]->Arrival == my_clk){
-				printf("Hi from PG\n");
+				//printf("Hi from PG\n");
 				
-				shmadr_PG1 = Processes[i];
-				printf("PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
-				shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
+				*shmadr_PG1 = *Processes[i];
+				
+				//printf("-%p- PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
+				//shmadr_PG1,(*shmadr_PG1)->ID, (*shmadr_PG1)->Arrival, (*shmadr_PG1)->Runtime, (*shmadr_PG1)->Priority);
+				printf("Noice1\n");
 				kill(PID_SCHD, SIGUSR1);
 
 				NumberOfProcesses--;
@@ -164,12 +166,12 @@ void clearResources(int signum)
 
 void createAttachResources(){
 
-	shmid_PG1 = shmget(321231, sizeof(struct Process), IPC_CREAT | 0666);
+	shmid_PG1 = shmget(SHKEYPROCESS2, sizeof(struct Process), IPC_CREAT | 0666);
     if ((long)shmid_PG1 == -1){
         perror("Error in creating shm! in process generator!");
         exit(-1);
     }
-    shmadr_PG1 = (struct Process*) shmat(shmid_PG1, (void *)0, 0);
+    shmadr_PG1 = (struct Process*)shmat(shmid_PG1, (void *)0, 0);
     if ((long)shmadr_PG1 == -1){
         perror("Error in attaching the shm in process generator!");
         exit(-1);

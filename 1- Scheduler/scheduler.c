@@ -176,16 +176,13 @@ int main(int argc, char * argv[])
 
 void ProcessArrived(int signum) //Process generator signals the scheduler that there is a process arrived and should be taken from the shared memory
 {
-	printf("Hi from Sched\n");
-
-	
-	printf("Sched rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
-	shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
+	printf("Noice2\n");
+	printf("%d\n", (*shmadr_PG1).Runtime);
 
 	struct Node* NewNode = (struct Node*)malloc(sizeof(struct Node));
 	NewNode->Next = NULL;
 	NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
-	*NewNode->Value = *shmadr_PG1;
+	*(NewNode->Value) = *((struct Process*)shmadr_PG1);
 
 	printf("-- Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
 	 NewNode->Value->ID, NewNode->Value->Arrival, NewNode->Value->Runtime, NewNode->Value->Priority);
@@ -317,7 +314,7 @@ void CleanUp(int signum)
 
 void createAttachResources(){
 
-	shmid_PG1 = shmget(321231, sizeof(struct Process), 0666);
+	shmid_PG1 = shmget(SHKEYPROCESS2, sizeof(struct Process), 0666);
     if ((long)shmid_PG1 == -1){
         perror("Error in creating shm! in Scheduler!");
         exit(-1);
