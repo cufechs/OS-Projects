@@ -116,7 +116,7 @@ int main(int argc, char * argv[])
     int my_clk;
     
 	
-    shmadr_PG1 = NULL; /* initialize shared memory */
+    //shmadr_PG1 = NULL; /* initialize shared memory */
 	down(semid_PG1); // to recive scheduler pid
 	int PID_SCHD = *shmadr_PG2;
 	
@@ -129,11 +129,11 @@ int main(int argc, char * argv[])
     	for(int i=0; i<NumberOfProcesses; i++)
     	{
 			if(Processes[i]->Arrival == my_clk){
-				printf("Hi from PG\n");
+				//printf("Hi from PG\n");
 				
-				shmadr_PG1 = &Processes[i];
-				printf("-%p- PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
-				shmadr_PG1,(*shmadr_PG1)->ID, (*shmadr_PG1)->Arrival, (*shmadr_PG1)->Runtime, (*shmadr_PG1)->Priority);
+				*shmadr_PG1 = Processes[i];
+				//printf("-%p- PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
+				//shmadr_PG1,(*shmadr_PG1)->ID, (*shmadr_PG1)->Arrival, (*shmadr_PG1)->Runtime, (*shmadr_PG1)->Priority);
 				kill(PID_SCHD, SIGUSR1);
 
 				NumberOfProcesses--;

@@ -117,14 +117,10 @@ int main(int argc, char * argv[])
 
 void ProcessArrived(int signum) //Process generator signals the scheduler that there is a process arrived and should be taken from the shared memory
 {
-	printf("Hi from Sched, -%p-\n", shmadr_PG1);
-
 	struct Node* NewNode = (struct Node*)malloc(sizeof(struct Node));
 	NewNode->Next = NULL;
 	NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
-	*NewNode->Value = **shmadr_PG1;
-
-	printf("Hi from Sched\n");
+	*NewNode->Value = **(struct Process**)shmadr_PG1;
 
 	printf("-- Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
 	 NewNode->Value->ID, NewNode->Value->Arrival, NewNode->Value->Runtime, NewNode->Value->Priority);
