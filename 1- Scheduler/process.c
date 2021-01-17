@@ -20,7 +20,7 @@ int main(int agrc, char * argv[])
 	attachResources();
 
 	*shmadr_SCH1 = getpid();
-    printf("OK1, pid: %d\n", *shmadr_SCH1);
+    //printf("OK1, pid: %d\n", *shmadr_SCH1);
 	up(semid_SHC1);
 
     initClk();
@@ -41,7 +41,7 @@ int main(int agrc, char * argv[])
     //Sempahore
     
     int PID_SCHD = atoi(argv[2]);
-    //kill(PID_SCHD, SIGUSR2);
+    kill(PID_SCHD, SIGUSR2);
     destroyClk(false);
     
 	exit(0);

@@ -3,6 +3,7 @@
 struct Process** Processes; //Declared global to clean them upon interruption
 
 int NumberOfProcesses;
+int totalRunTime;
 
 
 int shmid_PG1;
@@ -119,7 +120,7 @@ int main(int argc, char * argv[])
 	down(semid_PG1); // to recive scheduler pid
 	int PID_SCHD = *shmadr_PG2;
 	
-	printf("OK2, pid: %d\n", PID_SCHD);
+	//printf("OK2, pid: %d\n", PID_SCHD);
 
     
     while(1){
@@ -132,10 +133,11 @@ int main(int argc, char * argv[])
 				
 				*shmadr_PG1 = *Processes[i];
 				
-				//printf("-%p- PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
-				//shmadr_PG1,(*shmadr_PG1)->ID, (*shmadr_PG1)->Arrival, (*shmadr_PG1)->Runtime, (*shmadr_PG1)->Priority);
-				printf("Noice1\n");
+				printf("PG send: id: %d, arr: %d, runtime: %d, p: %d.\n",
+				shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
 				kill(PID_SCHD, SIGUSR1);
+
+				totalRunTime += totalRunTime==0? shmadr_PG1->Arrival + shmadr_PG1->Runtime : shmadr_PG1->Runtime;
 
 				NumberOfProcesses--;
 				Processes[i] = Processes[NumberOfProcesses]; //Decreasing the number of processes
@@ -148,7 +150,10 @@ int main(int argc, char * argv[])
     		break;
     }
     
-    // 7. Clear clock resources
+	totalRunTime = (totalRunTime > Processes[0]->Arrival + Processes[0]->Runtime)? totalRunTime : Processes[0]->Arrival + Processes[0]->Runtime;
+
+	sleep(totalRunTime - getClk() + 5);
+    
     clearResources(0);
     
     return 0;

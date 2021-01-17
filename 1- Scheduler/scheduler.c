@@ -38,7 +38,7 @@ int main(int argc, char * argv[])
 	createAttachResources();
 
 	*shmadr_PG2 = getpid();
-	printf("OK1, pid: %d\n", *shmadr_PG2);
+	//printf("OK1, pid: %d\n", *shmadr_PG2);
 	up(semid_PG1);
 
 
@@ -64,48 +64,37 @@ int main(int argc, char * argv[])
 		case HPF:
 			while(1){
 
-				//if(getClk() - PrevClk > 1){
-					if(ReadyQueue != NULL) {
+				if(ReadyQueue != NULL) {
 
-						struct Node* BestPriority = ReadyQueue;
-						struct Node* Temp = ReadyQueue;
-						
-						while(Temp != NULL){
-							if(Temp->Value->Priority < BestPriority->Value->Priority)
-								BestPriority = Temp;
-								
-							Temp = Temp->Next;	
-						}
-
-						runningProcess = BestPriority->Value;
-						removeFromReadyQueue(BestPriority);
-						
-
-						if(fork() == 0){
-							char char_arg[100]; 
-							sprintf(char_arg, "./process.out %d %d", BestPriority->Value->Runtime, getppid());
-							int Status = system(char_arg);
-							exit(0);
-						}
-
-						down(semid_SHC1);
-						int PID = *shmadr_SCH1;
-						printf("OK2, pid: %d\n", PID);
-						runningProcess->pid = PID;
-						
-						int stat_loc;
-						waitpid(runningProcess->pid, &stat_loc, 0);
-						if(WIFEXITED(stat_loc)){}
-
-						runningProcess = NULL;
-						
-						printf(":)\n");
-						//Archive
-						
-					}
+					struct Node* BestPriority = ReadyQueue;
+					struct Node* Temp = ReadyQueue;
 					
-					PrevClk = getClk();
-				//}
+					while(Temp != NULL){
+						if(Temp->Value->Priority < BestPriority->Value->Priority)
+							BestPriority = Temp;
+							
+						Temp = Temp->Next;	
+					}
+
+					runningProcess = BestPriority->Value;
+					removeFromReadyQueue(BestPriority);
+					
+
+					if(fork() == 0){
+						char char_arg[100]; 
+						sprintf(char_arg, "./process.out %d %d", BestPriority->Value->Runtime, getppid());
+						int Status = system(char_arg);
+						exit(0);
+					}
+
+					down(semid_SHC1);
+					int PID = *shmadr_SCH1;
+					//printf("OK2, pid: %d\n", PID);
+					runningProcess->pid = PID;
+					
+					while(runningProcess){}					
+				}
+					
 			}
 			break;
 		case SRTN:
@@ -125,7 +114,7 @@ int main(int argc, char * argv[])
 
 								down(semid_SHC1);
 								int PID = *shmadr_SCH1;
-								printf("OK2, pid: %d\n", PID);
+								//printf("OK2, pid: %d\n", PID);
 								ReadyQueue->Value->pid = PID;
 							}
 							else{
@@ -149,7 +138,7 @@ int main(int argc, char * argv[])
 
 						down(semid_SHC1);
 						int PID = *shmadr_SCH1;
-						printf("OK2, pid: %d\n", PID);
+						//printf("OK2, pid: %d\n", PID);
 						ReadyQueue->Value->pid = PID;
 
 						struct Process* tempRQ = ReadyQueue->Value;
@@ -176,15 +165,12 @@ int main(int argc, char * argv[])
 
 void ProcessArrived(int signum) //Process generator signals the scheduler that there is a process arrived and should be taken from the shared memory
 {
-	printf("Noice2\n");
-	printf("%d\n", (*shmadr_PG1).Runtime);
-
 	struct Node* NewNode = (struct Node*)malloc(sizeof(struct Node));
 	NewNode->Next = NULL;
 	NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
 	*(NewNode->Value) = *((struct Process*)shmadr_PG1);
 
-	printf("-- Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
+	printf("Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
 	 NewNode->Value->ID, NewNode->Value->Arrival, NewNode->Value->Runtime, NewNode->Value->Priority);
 
 	if(SchedulingAlgorithm == HPF || SchedulingAlgorithm == RR){
@@ -249,6 +235,8 @@ void ProcessFinished(int signum){
 	addToArchive(runningProcess);
 
 	runningProcess = NULL;
+
+	printf("A procces has finished :)\n");
 }
 
 void addToArchive(struct Process* proc){
