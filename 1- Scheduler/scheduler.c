@@ -24,6 +24,8 @@ void createAttachResources();
 void ProcessArrived(int signum);
 void ProcessFinished(int signum);
 void removeFromReadyQueue(struct Node* node);
+void addToReadyQueue(struct Node* node);
+void addToArchive(struct Process* proc);
 
 
 
@@ -188,7 +190,7 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 	printf("-- Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n",
 	 NewNode->Value->ID, NewNode->Value->Arrival, NewNode->Value->Runtime, NewNode->Value->Priority);
 
-	if(SchedulingAlgorithm == HPF){
+	if(SchedulingAlgorithm == HPF || SchedulingAlgorithm == RR){
 
 		if(ReadyQueue == NULL){
 			ReadyQueue = NewNode;
@@ -204,6 +206,7 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 
 		Temp->Next = NewNode;
 		up(semid_PG1);
+		return;
 	}
 	else if(SchedulingAlgorithm == SRTN){
 		
@@ -246,10 +249,16 @@ void ProcessFinished(int signum){
 	runningProcess->finishTime = getClk();
 	processFinished_flag = true;
 
+	addToArchive(runningProcess);
+
+	runningProcess = NULL;
+}
+
+void addToArchive(struct Process* proc){
 	struct Node* newArck = (struct Node*) malloc(sizeof(struct Node));
 	newArck->Value = (struct Process*) malloc(sizeof(struct Process));
 
-	*(newArck->Value) =  *runningProcess;
+	*(newArck->Value) =  *proc;
 
 	if(archive == NULL){
 		archive = newArck;
@@ -259,8 +268,6 @@ void ProcessFinished(int signum){
 		archive_tail->Next = newArck;
 		archive_tail = archive_tail->Next;
 	}
-
-	runningProcess = NULL;
 }
 
 void removeFromReadyQueue(struct Node* node){
@@ -279,6 +286,23 @@ void removeFromReadyQueue(struct Node* node){
 			node->Next = NULL;
 			return;
 		}
+	}
+}
+
+void addToReadyQueue(struct Node* node){
+	
+	if(ReadyQueue == NULL){
+		ReadyQueue = node;
+		ReadyQueue->Next = NULL;
+	}
+	else{
+		struct Node* Temp = ReadyQueue;
+		
+		while(Temp->Next != NULL){
+			Temp = Temp->Next;
+		}
+
+		Temp->Next = node;
 	}
 }
 
