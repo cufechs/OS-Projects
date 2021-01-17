@@ -26,6 +26,7 @@ typedef short bool;
 int * shmaddr;                 //
 //===============================
 
+enum Algo{RR, HPF, SRTN};
 
 struct Process
 {

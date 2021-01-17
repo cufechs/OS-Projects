@@ -37,11 +37,11 @@ int main(int argc, char * argv[])
     
 
     SchedulingAlgorithm = atoi(argv[1]); //Should be sent from outside
-	int Quantum = (SchedulingAlgorithm==0)? atoi(argv[2]) : 1; // get the quantum if RR
+	int Quantum = (SchedulingAlgorithm==RR)? atoi(argv[2]) : 1; // get the quantum if RR
 	int PrevClk = getClk() - 1;
 	switch(SchedulingAlgorithm)
 	{
-		case 0: //RR
+		case RR:
 			while(1)
 			{
 				if(getClk() - PrevClk > 1)
@@ -52,7 +52,7 @@ int main(int argc, char * argv[])
 				}
 			}
 			break;
-		case 1: //HPF
+		case HPF:
 			while(1){
 
 				//if(getClk() - PrevClk > 1){
@@ -71,7 +71,7 @@ int main(int argc, char * argv[])
 						runningProcess = BestPriority->Value;
 						removeFromReadyQueue(BestPriority);
 						
-						
+
 						if(fork() == 0){
 							char char_arg[100]; 
 							sprintf(char_arg, "./process.out %d %d", BestPriority->Value->Runtime, getppid());
@@ -98,7 +98,7 @@ int main(int argc, char * argv[])
 				//}
 			}
 			break;
-		case 2: //SRTN
+		case SRTN:
 			while(1)
 			{
 				if(getClk() - PrevClk > 1)
