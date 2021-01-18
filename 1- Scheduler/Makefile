@@ -11,5 +11,6 @@ clean:
 all: clean build
 
 run:
+	make
 	clear
 	./process_generator.out

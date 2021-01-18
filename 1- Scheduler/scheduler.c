@@ -19,6 +19,7 @@ pid_t* shmadr_SCH1;
 int semid_PG1;
 int semid_PG2;
 int semid_SHC1;
+int semid_SHC2;
 int semid_CLK;
 int semid_PG_CLK;
 
@@ -57,22 +58,28 @@ int main(int argc, char * argv[])
 		case RR:
 			while(1){
 				if(runningProcess == NULL){
+
 					if(ReadyQueue != NULL) {
 
 						if(ReadyQueue->Value->generated == false){
 							if(fork() == 0){
 								char char_arg[100]; 
-								sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
+								sprintf(char_arg, "./process.out %d %d %d", ReadyQueue->Value->Runtime, getppid(), getClk());
 								int Status = system(char_arg);
 								exit(0);
 							}
 							
+							usleep(100);
+							down(semid_SHC2);
+							down(semid_PG2);
 							down(semid_SHC1);
+							up(semid_PG2);
+							up(semid_SHC2);
 							int PID = *shmadr_SCH1;
 							//printf("OK2, pid: %d\n", PID);
 							ReadyQueue->Value->pid = PID;
 							ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
-							printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
+							printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);	
 						}
 						else{
 							kill(ReadyQueue->Value->pid, SIGCONT);
@@ -88,6 +95,7 @@ int main(int argc, char * argv[])
 					}
 				}
 				else if(runningProcess != NULL){
+
 					if((getClk() - PrevClk) > 0){
 						currQuantum -= 1;
 						runningProcess->RemainingTime -= 1;
@@ -110,21 +118,26 @@ int main(int argc, char * argv[])
 							if(ReadyQueue->Value->generated == false){
 								if(fork() == 0){
 									char char_arg[100]; 
-									sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
+									sprintf(char_arg, "./process.out %d %d %d", ReadyQueue->Value->Runtime, getppid(), getClk());
 									int Status = system(char_arg);
 									exit(0);
 								}
 								
+								usleep(100);
+								down(semid_SHC2);
+								down(semid_PG2);
 								down(semid_SHC1);
+								up(semid_PG2);
+								up(semid_SHC2);
 								int PID = *shmadr_SCH1;
 								//printf("OK2, pid: %d\n", PID);
 								ReadyQueue->Value->pid = PID;
 								ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
-								//printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
+								printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
 							}
 							else{
 								kill(ReadyQueue->Value->pid, SIGCONT);
-								//printf("clk: %d  \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
+								printf("clk: %d  \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
 							}
 
 							printf("clk: %d  \t Context Switching: ID: %d will run, ID: %d will sleep.\n",getClk(), ReadyQueue->Value->ID, runningProcess->ID);
@@ -167,19 +180,26 @@ int main(int argc, char * argv[])
 
 					if(fork() == 0){
 						char char_arg[100]; 
-						sprintf(char_arg, "./process.out %d %d", BestPriority->Value->Runtime, getppid());
+						sprintf(char_arg, "./process.out %d %d %d", BestPriority->Value->Runtime, getppid(), getClk());
 						int Status = system(char_arg);
 						exit(0);
 					}
 
+					usleep(100);
+					down(semid_SHC2);
+					down(semid_PG2);
 					down(semid_SHC1);
+					up(semid_PG2);
+					up(semid_SHC2);
 					int PID = *shmadr_SCH1;
-					//printf("OK2, pid: %d\n", PID);
+					printf("clk: %d  \t Process of ID: %d starting\n", getClk(), runningProcess->ID);
 					runningProcess->pid = PID;
+
+					sleep(runningProcess->RemainingTime-1);
 					
 					while(runningProcess){}					
 				}
-					
+				
 			}
 			break;
 		case SRTN:
@@ -191,12 +211,17 @@ int main(int argc, char * argv[])
 						if(ReadyQueue->Value->generated == false){
 							if(fork() == 0){
 								char char_arg[100]; 
-								sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
+								sprintf(char_arg, "./process.out %d %d %d", ReadyQueue->Value->Runtime, getppid(), getClk());
 								int Status = system(char_arg);
 								exit(0);
 							}
 							
+							usleep(100);
+							down(semid_SHC2);
+							down(semid_PG2);
 							down(semid_SHC1);
+							up(semid_PG2);
+							up(semid_SHC2);
 							int PID = *shmadr_SCH1;
 							//printf("OK2, pid: %d\n", PID);
 							ReadyQueue->Value->pid = PID;
@@ -218,12 +243,17 @@ int main(int argc, char * argv[])
 					kill(runningProcess->pid, SIGTSTP);
 					if(fork() == 0){
 						char char_arg[100]; 
-						sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
+						sprintf(char_arg, "./process.out %d %d %d", ReadyQueue->Value->Runtime, getppid(), getClk());
 						int Status = system(char_arg);
 						exit(0);
 					}
 
+					usleep(100);
+					down(semid_SHC2);
+					down(semid_PG2);
 					down(semid_SHC1);
+					up(semid_PG2);
+					up(semid_SHC2);
 					int PID = *shmadr_SCH1;
 					//printf("OK2, pid: %d\n", PID);
 					ReadyQueue->Value->pid = PID;
@@ -385,6 +415,7 @@ void CleanUp(int signum)
 {
 	shmctl(shmid_SCH1, IPC_RMID, NULL);
 	semctl(semid_SHC1, IPC_RMID, 0);
+	semctl(semid_SHC2, IPC_RMID, 0);
     destroyClk(true);
     printf("Scheduler terminating!\n");
     exit(0);
@@ -444,6 +475,17 @@ void createAttachResources(){
 	union Semun semun;
 	semun.val = 0; /* initial value of the semaphore, Binary semaphore */
     if (semctl(semid_SHC1, 0, SETVAL, semun) == -1){
+        perror("Error in semaphore");
+        exit(-1);
+    }
+
+	semid_SHC2 = semget(8456745, 1, IPC_CREAT | 0666);
+	if ((long)semid_SHC2 == -1){
+        perror("Error in creating sem! in Scheduler!");
+        exit(-1);
+    }
+	semun.val = 1; /* initial value of the semaphore, Binary semaphore */
+    if (semctl(semid_SHC2, 0, SETVAL, semun) == -1){
         perror("Error in semaphore");
         exit(-1);
     }

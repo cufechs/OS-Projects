@@ -49,7 +49,7 @@ int main(int argc, char * argv[])
     {
         //printf("current (CLK) time is %d\n", *shmaddr);
         //up(semid_CLK);
-        sleep(1);
+        usleep(500000);
         (*shmaddr)++;
     }
 }

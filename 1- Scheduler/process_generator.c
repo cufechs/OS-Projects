@@ -136,12 +136,18 @@ int main(int argc, char * argv[])
 			if(Processes[i]->Arrival == my_clk){
 				//printf("Hi from PG\n");
 				
+				
+				down(semid_PG2);
+				//printf("PG is In\n");
+
 				*shmadr_PG1 = *Processes[i];
 				
-				printf("clk: %d  \t PG send: id: %d, arr: %d, runtime: %d, p: %d\n",
-				getClk(), shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
+				//printf("clk: %d  \t PG send: id: %d, arr: %d, runtime: %d, p: %d\n",
+				//getClk(), shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
 
 				kill(PID_SCHD, SIGUSR1);
+				up(semid_PG2);
+
 
 				totalRunTime += totalRunTime==0? shmadr_PG1->Arrival + shmadr_PG1->Runtime : shmadr_PG1->Runtime;
 
@@ -158,7 +164,7 @@ int main(int argc, char * argv[])
     
 	totalRunTime = (totalRunTime > Processes[0]->Arrival + Processes[0]->Runtime)? totalRunTime : Processes[0]->Arrival + Processes[0]->Runtime;
 
-	sleep((totalRunTime - getClk()) + 5);
+	sleep((totalRunTime - getClk())/2 + 5);
     
     clearResources(0);
     
@@ -176,6 +182,7 @@ void clearResources(int signum)
 	shmctl(shmid_PG2, IPC_RMID, NULL);
 	semctl(semid_CLK, IPC_RMID, 0);
 	semctl(semid_PG1, IPC_RMID, 0);
+	semctl(semid_PG2, IPC_RMID, 0);
 	semctl(semid_PG_CLK, IPC_RMID, 0);
 
 }
@@ -212,6 +219,17 @@ void createAttachResources(){
 	union Semun semun;
 	semun.val = 0; /* initial value of the semaphore, Binary semaphore */
     if (semctl(semid_PG1, 0, SETVAL, semun) == -1){
+        perror("Error in semaphore");
+        exit(-1);
+    }
+
+	semid_PG2 = semget(8934532, 1, 0666 | IPC_CREAT);
+	if ((long)semid_PG2 == -1){
+        perror("Error in creating sem! in process generator!");
+        exit(-1);
+    }
+	semun.val = 1; /* initial value of the semaphore, Binary semaphore */
+    if (semctl(semid_PG2, 0, SETVAL, semun) == -1){
         perror("Error in semaphore");
         exit(-1);
     }

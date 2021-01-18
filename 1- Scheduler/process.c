@@ -8,6 +8,7 @@ int PID_SCHD;
 int shmid_SCH1;
 pid_t* shmadr_SCH1;
 int semid_SHC1;
+int semid_SHC2;
 
 void WokeUp(int signum);
 void StopMe(int signum);
@@ -25,10 +26,10 @@ int main(int agrc, char * argv[])
 	up(semid_SHC1);
 
     initClk();
-    Clock = getClk();
+    Clock = atoi(argv[3]);
     //TODO it needs to get the remaining time from somewhere
     remainingtime = atoi(argv[1]); //We should use shared memory to get the remaining time of the process
-    //printf("will run for %d sec.\n", remainingtime);
+    //printf("clk: %d  \t Process started with remaining time: %d\n",  getClk(), remainingtime);
     
     while (remainingtime > 0){
     	//Semaphore
@@ -43,7 +44,11 @@ int main(int agrc, char * argv[])
     //Sempahore
     
     PID_SCHD = atoi(argv[2]);
+
+    down(semid_SHC2);
     kill(PID_SCHD, SIGUSR2);
+    up(semid_SHC2);
+    
     destroyClk(false);
     
 	exit(0);
@@ -83,6 +88,11 @@ void attachResources(){
 
 	semid_SHC1 = semget(512432, 1, 0666);
 	if ((long)semid_SHC1 == -1){
+        perror("Error in creating sem! in Scheduler!");
+        exit(-1);
+    }
+    semid_SHC2 = semget(8456745, 1, 0666);
+	if ((long)semid_SHC2 == -1){
         perror("Error in creating sem! in Scheduler!");
         exit(-1);
     }
