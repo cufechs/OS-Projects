@@ -17,6 +17,7 @@ pid_t* shmadr_PG2;
 int shmid_SCH1;
 pid_t* shmadr_SCH1;
 int semid_PG1;
+int semid_PG2;
 int semid_SHC1;
 int semid_CLK;
 int semid_PG_CLK;
@@ -36,15 +37,15 @@ int main(int argc, char * argv[])
 	signal(SIGUSR1, ProcessArrived);
 	signal(SIGUSR2, ProcessFinished);
 	signal(SIGINT, CleanUp);
-	
+
 	createAttachResources();
 
 	*shmadr_PG2 = getpid();
 	//printf("OK1, pid: %d\n", *shmadr_PG2);
 	up(semid_PG1);
-
-
+    
     initClk();
+	up(semid_PG1);
     
 
     SchedulingAlgorithm = atoi(argv[1]); //Should be sent from outside
@@ -429,6 +430,11 @@ void createAttachResources(){
         perror("Error in creating sem! in Scheduler!");
         exit(-1);
     }
+	semid_PG2 = semget(8934532, 1, 0666 | IPC_CREAT);
+	if ((long)semid_PG2 == -1){
+        perror("Error in creating sem! in Scheduler!");
+        exit(-1);
+    }
 
 	semid_SHC1 = semget(512432, 1, IPC_CREAT | 0666);
 	if ((long)semid_SHC1 == -1){
@@ -447,6 +453,8 @@ void createAttachResources(){
         perror("Error in creating sem! in Sch!");
         exit(-1);
     }
+
+	
 
 	semid_PG_CLK = semget(345645, 1, 0666);
 	if ((long)semid_PG_CLK == -1){

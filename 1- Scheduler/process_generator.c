@@ -11,6 +11,7 @@ struct Process* shmadr_PG1;
 int shmid_PG2;
 pid_t* shmadr_PG2;
 int semid_PG1;
+int semid_PG2;
 int semid_PG_CLK;
 int semid_CLK;
 
@@ -96,6 +97,11 @@ int main(int argc, char * argv[])
     }
     
 	createAttachResources();
+
+	if(fork() == 0){  //Forking the clock to start it and initalize it, without pausing this program
+        int Status = system("./clk.out");
+        exit(0);
+    }
     
     if(fork() == 0){  //Forking the clock to start it and initalize it, without pausing this program
     	
@@ -105,11 +111,6 @@ int main(int argc, char * argv[])
 		else
     		sprintf(char_arg, "./scheduler.out %d",ChosenSchedulingAlgorithm);
 		int Status = system(char_arg);
-        exit(0);
-    }
-   
-    if(fork() == 0){  //Forking the clock to start it and initalize it, without pausing this program
-        int Status = system("./clk.out");
         exit(0);
     }
     
@@ -124,7 +125,7 @@ int main(int argc, char * argv[])
 	
 	//printf("OK2, pid: %d\n", PID_SCHD);
 
-    
+    down(semid_PG1);
     while(1){
 		//down(semid_CLK);
     	my_clk = getClk();
@@ -137,8 +138,9 @@ int main(int argc, char * argv[])
 				
 				*shmadr_PG1 = *Processes[i];
 				
-				//printf("PG send: id: %d, arr: %d, runtime: %d, p: %d. \t\t clk: %d\n",
-				//shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority, my_clk);
+				printf("clk: %d  \t PG send: id: %d, arr: %d, runtime: %d, p: %d\n",
+				getClk(), shmadr_PG1->ID, shmadr_PG1->Arrival, shmadr_PG1->Runtime, shmadr_PG1->Priority);
+
 				kill(PID_SCHD, SIGUSR1);
 
 				totalRunTime += totalRunTime==0? shmadr_PG1->Arrival + shmadr_PG1->Runtime : shmadr_PG1->Runtime;
@@ -146,7 +148,7 @@ int main(int argc, char * argv[])
 				NumberOfProcesses--;
 				Processes[i] = Processes[NumberOfProcesses]; //Decreasing the number of processes
 				
-				//down(semid_PG1);
+				down(semid_PG1);
 			}
     	}
     	
