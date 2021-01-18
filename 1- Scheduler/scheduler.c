@@ -83,12 +83,14 @@ int main(int argc, char * argv[])
 
 						removeFromReadyQueue(ReadyQueue);
 						currQuantum = (runningProcess->RemainingTime > Quantum)? Quantum : runningProcess->RemainingTime;
+						PrevClk = getClk();
 					}
 				}
 				else if(runningProcess != NULL){
 					if((getClk() - PrevClk) > 0){
 						currQuantum -= 1;
 						runningProcess->RemainingTime -= 1;
+						PrevClk = getClk();
 					}
 
 					if(currQuantum == 0){
@@ -100,9 +102,9 @@ int main(int argc, char * argv[])
 								Node->Value = runningProcess;
 								Node->Next = NULL;
 								addToReadyQueue(Node);
+								kill(runningProcess->pid, SIGTSTP);
 							}
-
-							kill(runningProcess->pid, SIGTSTP);
+							
 
 							if(ReadyQueue->Value->generated == false){
 								if(fork() == 0){
@@ -141,7 +143,6 @@ int main(int argc, char * argv[])
 
 				}
 
-				PrevClk = getClk();
 			}
 			break;
 		case HPF:

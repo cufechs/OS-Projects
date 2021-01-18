@@ -11,4 +11,4 @@ clean:
 all: clean build
 
 run:
-	gdb ./process_generator.out
+	./process_generator.out
