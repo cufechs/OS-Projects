@@ -140,7 +140,6 @@ int main(int argc, char * argv[])
 							}
 						}
 					}
-
 				}
 
 			}
@@ -325,7 +324,7 @@ void ProcessFinished(int signum){
 
 	printf("clk: %d  \t Procces %d has finished :)\n", runningProcess->finishTime, runningProcess->ID);
 
-	runningProcess = NULL;
+	runningProcess = (SchedulingAlgorithm==RR)? runningProcess : NULL;
 }
 
 void addToArchive(struct Process* proc){
