@@ -48,7 +48,7 @@ int main(int argc, char * argv[])
     while (1)
     {
         //printf("current (CLK) time is %d\n", *shmaddr);
-        up(semid_CLK);
+        //up(semid_CLK);
         sleep(1);
         (*shmaddr)++;
     }

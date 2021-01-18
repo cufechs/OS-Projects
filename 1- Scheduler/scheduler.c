@@ -382,7 +382,8 @@ void addToReadyQueue(struct Node* node){
 /* Clear the resources before exit */
 void CleanUp(int signum)
 {
-    shmctl(shmid_PG1, IPC_RMID, NULL);
+	shmctl(shmid_SCH1, IPC_RMID, NULL);
+	semctl(semid_SHC1, IPC_RMID, 0);
     destroyClk(true);
     printf("Scheduler terminating!\n");
     exit(0);
@@ -401,7 +402,7 @@ void createAttachResources(){
         exit(-1);
     }
 
-	shmid_PG2 = shmget(1279456, sizeof(pid_t), IPC_CREAT | 0666);
+	shmid_PG2 = shmget(1279456, sizeof(pid_t), 0666);
     if ((long)shmid_PG2 == -1){
         perror("Error in creating shm! in process generator!");
         exit(-1);

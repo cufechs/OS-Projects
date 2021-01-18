@@ -126,7 +126,7 @@ int main(int argc, char * argv[])
 
     
     while(1){
-		down(semid_CLK);
+		//down(semid_CLK);
     	my_clk = getClk();
 		//up(semid_PG_CLK);
 
@@ -146,7 +146,7 @@ int main(int argc, char * argv[])
 				NumberOfProcesses--;
 				Processes[i] = Processes[NumberOfProcesses]; //Decreasing the number of processes
 				
-				down(semid_PG1);
+				//down(semid_PG1);
 			}
     	}
     	
@@ -165,12 +165,17 @@ int main(int argc, char * argv[])
 
 void clearResources(int signum)
 {
-    //TODO Clears all resources in case of interruption
     //We Should free the processes
     for(int i=0; i<NumberOfProcesses; i++)
     	free(Processes[i]);
 	free(Processes);
 	destroyClk(true);
+	shmctl(shmid_PG1, IPC_RMID, NULL);
+	shmctl(shmid_PG2, IPC_RMID, NULL);
+	semctl(semid_CLK, IPC_RMID, 0);
+	semctl(semid_PG1, IPC_RMID, 0);
+	semctl(semid_PG_CLK, IPC_RMID, 0);
+
 }
 
 void createAttachResources(){
