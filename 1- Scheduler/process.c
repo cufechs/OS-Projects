@@ -52,7 +52,7 @@ int main(int agrc, char * argv[])
 
 void WokeUp(int signum){
 	//TODO
-    printf("clk: %d \t I am resuming and my remaining time: %d\n", getClk(),remainingtime);
+    //printf("clk: %d  \t I am resuming and my remaining time: %d\n", getClk(),remainingtime);
 	Clock = getClk();
 }
 
@@ -61,7 +61,7 @@ void StopMe(int signum){
 	if(getClk() - Clock == 1)
 		remainingtime--;
 		
-    printf("clk: %d \t I am stopped and my remaining time: %d\n", getClk(), remainingtime);
+    //printf("clk: %d  \t I am stopped and my remaining time: %d\n", getClk(), remainingtime);
 
 	if(remainingtime > 0){
 		kill(getpid(), SIGSTOP);

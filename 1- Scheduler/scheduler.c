@@ -49,19 +49,99 @@ int main(int argc, char * argv[])
 
     SchedulingAlgorithm = atoi(argv[1]); //Should be sent from outside
 	int Quantum = (SchedulingAlgorithm==RR)? atoi(argv[2]) : 1; // get the quantum if RR
+	int currQuantum;
 	int PrevClk = getClk() - 1;
 	switch(SchedulingAlgorithm)
 	{
 		case RR:
 			while(1){
-				//down(semid_PG_CLK);
+				if(runningProcess == NULL){
+					if(ReadyQueue != NULL) {
 
-				if(getClk() - PrevClk > 1)
-				{
-					
-					
-					PrevClk = getClk();
+						if(ReadyQueue->Value->generated == false){
+							if(fork() == 0){
+								char char_arg[100]; 
+								sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
+								int Status = system(char_arg);
+								exit(0);
+							}
+							
+							down(semid_SHC1);
+							int PID = *shmadr_SCH1;
+							//printf("OK2, pid: %d\n", PID);
+							ReadyQueue->Value->pid = PID;
+							ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
+							printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
+						}
+						else{
+							kill(ReadyQueue->Value->pid, SIGCONT);
+							printf("clk: %d  \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
+						}
+
+						runningProcess = ReadyQueue->Value;
+						runningProcess->generated = true;
+
+						removeFromReadyQueue(ReadyQueue);
+						currQuantum = (runningProcess->RemainingTime > Quantum)? Quantum : runningProcess->RemainingTime;
+					}
 				}
+				else if(runningProcess != NULL){
+					if((getClk() - PrevClk) > 0){
+						currQuantum -= 1;
+						runningProcess->RemainingTime -= 1;
+					}
+
+					if(currQuantum == 0){
+
+						if(ReadyQueue != NULL) {
+
+							if(runningProcess->RemainingTime > 0){
+								struct Node* Node = (struct Node*)malloc(sizeof(struct Node));
+								Node->Value = runningProcess;
+								Node->Next = NULL;
+								addToReadyQueue(Node);
+							}
+
+							kill(runningProcess->pid, SIGTSTP);
+
+							if(ReadyQueue->Value->generated == false){
+								if(fork() == 0){
+									char char_arg[100]; 
+									sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
+									int Status = system(char_arg);
+									exit(0);
+								}
+								
+								down(semid_SHC1);
+								int PID = *shmadr_SCH1;
+								//printf("OK2, pid: %d\n", PID);
+								ReadyQueue->Value->pid = PID;
+								ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
+								//printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
+							}
+							else{
+								kill(ReadyQueue->Value->pid, SIGCONT);
+								//printf("clk: %d  \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
+							}
+
+							printf("clk: %d  \t Context Switching: ID: %d will run, ID: %d will sleep.\n",getClk(), ReadyQueue->Value->ID, runningProcess->ID);
+
+							runningProcess = ReadyQueue->Value;
+							runningProcess->generated = true;
+
+							removeFromReadyQueue(ReadyQueue);
+							currQuantum = (runningProcess->RemainingTime > Quantum)? Quantum : runningProcess->RemainingTime;
+						}
+						else{
+							if(runningProcess->RemainingTime > 0){
+								currQuantum = (runningProcess->RemainingTime > Quantum)? Quantum : runningProcess->RemainingTime;
+							}
+						}
+					}
+
+				}
+
+				PrevClk = getClk();
 			}
 			break;
 		case HPF:
@@ -103,74 +183,69 @@ int main(int argc, char * argv[])
 			break;
 		case SRTN:
 			while(1){
-				//down(semid_PG_CLK);
-				//if(getClk() - PrevClk > 1){
-					if(runningProcess == NULL){
-						if(ReadyQueue != NULL){
 
-							if(ReadyQueue->Value->generated == false){
-								if(fork() == 0){
-									char char_arg[100]; 
-									sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
-									int Status = system(char_arg);
-									exit(0);
-								}
-								
-								down(semid_SHC1);
-								int PID = *shmadr_SCH1;
-								//printf("OK2, pid: %d\n", PID);
-								ReadyQueue->Value->pid = PID;
-								ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
-								printf("clk: %d \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
+				if(runningProcess == NULL){
+					if(ReadyQueue != NULL){
+
+						if(ReadyQueue->Value->generated == false){
+							if(fork() == 0){
+								char char_arg[100]; 
+								sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
+								int Status = system(char_arg);
+								exit(0);
 							}
-							else{
-								kill(ReadyQueue->Value->pid, SIGCONT);
-								printf("clk: %d \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
-							}
-
-							runningProcess = ReadyQueue->Value;
-							runningProcess->generated = true;
-
-							ReadyQueue = ReadyQueue->Next;
+							
+							down(semid_SHC1);
+							int PID = *shmadr_SCH1;
+							//printf("OK2, pid: %d\n", PID);
+							ReadyQueue->Value->pid = PID;
+							ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
+							printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
 						}
-					}
-					else if(preemption_flag){
-						kill(runningProcess->pid, SIGTSTP);
-						if(fork() == 0){
-							char char_arg[100]; 
-							sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
-							int Status = system(char_arg);
-							exit(0);
+						else{
+							kill(ReadyQueue->Value->pid, SIGCONT);
+							printf("clk: %d  \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
 						}
 
-						down(semid_SHC1);
-						int PID = *shmadr_SCH1;
-						//printf("OK2, pid: %d\n", PID);
-						ReadyQueue->Value->pid = PID;
-						ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
-
-						printf("clk: %d \t Context Switching: ID: %d will run, ID: %d will sleep.\n",getClk(), ReadyQueue->Value->ID, runningProcess->ID);
-
-						struct Process* tempRQ = ReadyQueue->Value;
-						ReadyQueue->Value = runningProcess;
-						runningProcess = tempRQ;
+						runningProcess = ReadyQueue->Value;
 						runningProcess->generated = true;
 
-						preemption_flag = false;
+						ReadyQueue = ReadyQueue->Next;
 					}
-					else if(runningProcess != NULL && (getClk() - PrevClk) >= 1){
-						runningProcess->RemainingTime -= 1;
+				}
+				else if(preemption_flag){
+					kill(runningProcess->pid, SIGTSTP);
+					if(fork() == 0){
+						char char_arg[100]; 
+						sprintf(char_arg, "./process.out %d %d", ReadyQueue->Value->Runtime, getppid());
+						int Status = system(char_arg);
+						exit(0);
 					}
 
-					
-					
-					PrevClk = getClk();
-				//}
+					down(semid_SHC1);
+					int PID = *shmadr_SCH1;
+					//printf("OK2, pid: %d\n", PID);
+					ReadyQueue->Value->pid = PID;
+					ReadyQueue->Value->RemainingTime = ReadyQueue->Value->Runtime;
+
+					printf("clk: %d  \t Context Switching: ID: %d will run, ID: %d will sleep.\n",getClk(), ReadyQueue->Value->ID, runningProcess->ID);
+
+					struct Process* tempRQ = ReadyQueue->Value;
+					ReadyQueue->Value = runningProcess;
+					runningProcess = tempRQ;
+					runningProcess->generated = true;
+
+					preemption_flag = false;
+				}
+				else if(runningProcess != NULL && (getClk() - PrevClk) >= 1){
+					runningProcess->RemainingTime -= 1;
+				}
+
+				PrevClk = getClk();
 			}
 			break;
 	}
     
-    //upon termination release the clock resources.
     
     CleanUp(0);
 }
@@ -182,7 +257,7 @@ void ProcessArrived(int signum) //Process generator signals the scheduler that t
 	NewNode->Value = (struct Process*)malloc(sizeof(struct Process));
 	*(NewNode->Value) = *((struct Process*)shmadr_PG1);
 
-	printf("clk: %d \t Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n", getClk(),
+	printf("clk: %d  \t Sch Rec: id: %d, arr: %d, runtime: %d, p: %d.\n", getClk(),
 	 NewNode->Value->ID, NewNode->Value->Arrival, NewNode->Value->Runtime, NewNode->Value->Priority);
 
 	if(SchedulingAlgorithm == HPF || SchedulingAlgorithm == RR){
@@ -247,7 +322,7 @@ void ProcessFinished(int signum){
 
 	addToArchive(runningProcess);
 
-	printf("clk: %d \t Procces %d has finished :)\n", runningProcess->finishTime, runningProcess->ID);
+	printf("clk: %d  \t Procces %d has finished :)\n", runningProcess->finishTime, runningProcess->ID);
 
 	runningProcess = NULL;
 }
