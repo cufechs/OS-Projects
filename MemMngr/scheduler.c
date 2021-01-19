@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 						///
 						struct memStruct alloc = allocateProcess(ReadyQueue->Value->memSize, ReadyQueue->Value->ID);
 						/*if(alloc.id==-1)
-								continue;	*/
+							continue;*/
 						///
 
 						if (fork() == 0)
@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
 				///
 				struct memStruct alloc = allocateProcess(BestPriority->Value->memSize, BestPriority->Value->ID);
 				/*if(alloc.id==-1)
-					continue;	*/
+					continue;*/
 				///
 
 				runningProcess = BestPriority->Value;
@@ -754,6 +754,10 @@ void ProcessFinished(int signum)
 		ArcInstance2.RemainingTime = 0;
 		ArcInstance2.EventTime = Clk6;
 		ArcInstance2.State = 3;
+
+		ArcInstance2.startMemIndex=dealloc.start;
+		ArcInstance2.endMemIndex = dealloc.end;
+		ArcInstance2.memSize = runningProcess->memSize;
 
 		Temp6->Next->ArchiveInstance = ArcInstance2;
 		Temp6->Next->Next = NULL;

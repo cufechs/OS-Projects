@@ -14,7 +14,6 @@ struct memStruct
     int start;
     int end;
     int id;
-    int allocOrDealloc;
 };
 
 struct memStruct n;
@@ -210,6 +209,7 @@ struct memStruct deallocateMemory(int index, int id)
 //allocating the memory in the best suaitable location according to its size; if possible..
 struct memStruct allocateMemory(int size, int index, int id)
 {
+    struct memStruct t = n;
     if (general[index][0].start == MAX_SIZE) // empty; i.e. no avalible slots = All occupied
     {
         if (index == 5)
@@ -234,7 +234,7 @@ struct memStruct allocateMemory(int size, int index, int id)
         general[index][0].id = id;
         printf("Process with id= %d start at address %d and ends at %d\n", general[index][0].id, general[index][0].start, general[index][0].end);
         sort(general[index], nSizes[index], widths[index]);
-        return general[index][0];
+        t= general[index][0];
     }
     else
     {
@@ -255,6 +255,7 @@ struct memStruct allocateMemory(int size, int index, int id)
         general[index][0].end = MAX_SIZE;
         sort(general[index], nSizes[index], widths[index]);
     }
+    return t;
 }
 
 //the high level functions that process generator call:
