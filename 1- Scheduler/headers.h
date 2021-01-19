@@ -53,8 +53,22 @@ struct msgbuff
     pid_t mpid;
 };
 
+struct Archive
+{
+	int ID;
+	int ArrivalTime;
+	int WaitingTime;
+	int RunTime;
+	int RemainingTime;
+	int EventTime;
+	int State; //0 Started, 1 Stopped, 2 Resumed, 3 Finished.
+};
 
-
+struct ArchiveNode
+{
+	struct Archive ArchiveInstance;
+	struct ArchiveNode* Next;
+};
 
 int getClk()
 {

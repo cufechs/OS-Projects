@@ -1,5 +1,6 @@
 #include "headers.h"
 
+struct ArchiveNode* ArchiveHead = NULL;
 struct Node* archive = NULL;
 struct Node* archive_tail = NULL;
 
@@ -60,7 +61,16 @@ int main(int argc, char * argv[])
 				if(runningProcess == NULL){
 
 					if(ReadyQueue != NULL) {
+						
+						struct Node* temp = ReadyQueue;
+                            printf("Ready Queue: ");
+                            while(temp != NULL){
+                                printf("%d ", temp->Value->ID);
+                                temp = temp->Next;
+                            }
+                            printf("\n");
 
+						
 						if(ReadyQueue->Value->generated == false){
 							if(fork() == 0){
 								char char_arg[100]; 
@@ -68,6 +78,46 @@ int main(int argc, char * argv[])
 								int Status = system(char_arg);
 								exit(0);
 							}
+							
+							//Might need a semaphore
+							//
+							int Clk = getClk();
+							if(ArchiveHead == NULL)
+							{
+								ArchiveHead = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+								
+								struct Archive ArcInstance;
+								ArcInstance.ID = ReadyQueue->Value->ID;
+								ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+								ArcInstance.WaitingTime = Clk - ArcInstance.ArrivalTime;
+								ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+								ArcInstance.RemainingTime = ArcInstance.RunTime;
+								ArcInstance.EventTime = Clk;
+								ArcInstance.State = 0;
+								
+								ArchiveHead->ArchiveInstance = ArcInstance;
+								ArchiveHead->Next = NULL;
+							}
+							else
+							{
+								struct ArchiveNode* Temp = ArchiveHead;
+								while(Temp->Next != NULL)
+									Temp = Temp->Next;
+									
+								Temp->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+								struct Archive ArcInstance;
+								ArcInstance.ID = ReadyQueue->Value->ID;
+								ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+								ArcInstance.WaitingTime = Clk - ArcInstance.ArrivalTime;
+								ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+								ArcInstance.RemainingTime = ArcInstance.RunTime;
+								ArcInstance.EventTime = Clk;
+								ArcInstance.State = 0;
+								
+								Temp->Next->ArchiveInstance = ArcInstance;
+								Temp->Next->Next = NULL;
+							}
+							//
 							
 							usleep(100);
 							down(semid_SHC2);
@@ -82,6 +132,27 @@ int main(int argc, char * argv[])
 							printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);	
 						}
 						else{
+							//Might need a semaphore
+							//
+							int Clk = getClk();
+							struct ArchiveNode* Temp = ArchiveHead;
+							while(Temp->Next != NULL)
+								Temp = Temp->Next;
+								
+							Temp->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+							struct Archive ArcInstance;
+							ArcInstance.ID = ReadyQueue->Value->ID;
+							ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+							ArcInstance.WaitingTime = Clk - ArcInstance.ArrivalTime - (ReadyQueue->Value->Runtime - ReadyQueue->Value->RemainingTime);
+							ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+							ArcInstance.RemainingTime = ReadyQueue->Value->RemainingTime;
+							ArcInstance.EventTime = Clk;
+							ArcInstance.State = 2;
+							
+							Temp->Next->ArchiveInstance = ArcInstance;
+							Temp->Next->Next = NULL;
+							//
+						
 							kill(ReadyQueue->Value->pid, SIGCONT);
 							printf("clk: %d  \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
 						}
@@ -106,7 +177,36 @@ int main(int argc, char * argv[])
 
 						if(ReadyQueue != NULL) {
 
+							struct Node* temp = ReadyQueue;
+                            printf("Ready Queue: ");
+                            while(temp != NULL){
+                                printf("%d ", temp->Value->ID);
+                                temp = temp->Next;
+                            }
+                            printf("\n");
+
+
 							if(runningProcess->RemainingTime > 0){
+								//Might Need Semaphore --Archive Related--
+								int Clk = getClk();
+								struct ArchiveNode* Temp = ArchiveHead;
+								while(Temp->Next != NULL)
+									Temp = Temp->Next;
+									
+								Temp->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+								struct Archive ArcInstance;
+								ArcInstance.ID = ReadyQueue->Value->ID;
+								ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+								ArcInstance.WaitingTime = Clk - ArcInstance.ArrivalTime - (ReadyQueue->Value->Runtime - ReadyQueue->Value->RemainingTime);
+								ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+								ArcInstance.RemainingTime = ReadyQueue->Value->RemainingTime;
+								ArcInstance.EventTime = Clk;
+								ArcInstance.State = 1;
+								
+								Temp->Next->ArchiveInstance = ArcInstance;
+								Temp->Next->Next = NULL;
+								//
+							
 								struct Node* Node = (struct Node*)malloc(sizeof(struct Node));
 								Node->Value = runningProcess;
 								Node->Next = NULL;
@@ -123,6 +223,26 @@ int main(int argc, char * argv[])
 									exit(0);
 								}
 								
+								// Might Need a semaphore
+								int Clk = getClk();
+								struct ArchiveNode* Temp = ArchiveHead;
+								while(Temp->Next != NULL)
+									Temp = Temp->Next;
+									
+								Temp->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+								struct Archive ArcInstance;
+								ArcInstance.ID = ReadyQueue->Value->ID;
+								ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+								ArcInstance.WaitingTime = Clk - ArcInstance.ArrivalTime;
+								ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+								ArcInstance.RemainingTime = ArcInstance.RunTime;
+								ArcInstance.EventTime = Clk;
+								ArcInstance.State = 0;
+								
+								Temp->Next->ArchiveInstance = ArcInstance;
+								Temp->Next->Next = NULL;
+								//
+								
 								usleep(100);
 								down(semid_SHC2);
 								down(semid_PG2);
@@ -136,6 +256,27 @@ int main(int argc, char * argv[])
 								printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
 							}
 							else{
+								//Might need a semaphore
+								//
+								int Clk = getClk();
+								struct ArchiveNode* Temp = ArchiveHead;
+								while(Temp->Next != NULL)
+									Temp = Temp->Next;
+									
+								Temp->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+								struct Archive ArcInstance;
+								ArcInstance.ID = ReadyQueue->Value->ID;
+								ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+								ArcInstance.WaitingTime = Clk - ArcInstance.ArrivalTime - (ReadyQueue->Value->Runtime - ReadyQueue->Value->RemainingTime);
+								ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+								ArcInstance.RemainingTime = ReadyQueue->Value->RemainingTime;
+								ArcInstance.EventTime = Clk;
+								ArcInstance.State = 2;
+								
+								Temp->Next->ArchiveInstance = ArcInstance;
+								Temp->Next->Next = NULL;
+								//
+							
 								kill(ReadyQueue->Value->pid, SIGCONT);
 								printf("clk: %d  \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
 							}
@@ -155,7 +296,6 @@ int main(int argc, char * argv[])
 						}
 					}
 				}
-
 			}
 			break;
 		case HPF:
@@ -177,6 +317,45 @@ int main(int argc, char * argv[])
 					runningProcess = BestPriority->Value;
 					removeFromReadyQueue(BestPriority);
 					
+					//Might need a semaphore
+					//
+					int Clk2 = getClk();
+					if(ArchiveHead == NULL)
+					{
+						ArchiveHead = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+						
+						struct Archive ArcInstance;
+						ArcInstance.ID = runningProcess->ID;
+						ArcInstance.ArrivalTime = runningProcess->Arrival;
+						ArcInstance.WaitingTime = Clk2 - ArcInstance.ArrivalTime;
+						ArcInstance.RunTime = runningProcess->Runtime;
+						ArcInstance.RemainingTime = ArcInstance.RunTime;
+						ArcInstance.EventTime = Clk2;
+						ArcInstance.State = 0;
+						
+						ArchiveHead->ArchiveInstance = ArcInstance;
+						ArchiveHead->Next = NULL;
+					}
+					else
+					{
+						struct ArchiveNode* Temp2 = ArchiveHead;
+						while(Temp2->Next != NULL)
+							Temp2 = Temp2->Next;
+							
+						Temp2->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+						struct Archive ArcInstance;
+						ArcInstance.ID = runningProcess->ID;
+						ArcInstance.ArrivalTime = runningProcess->Arrival;
+						ArcInstance.WaitingTime = Clk2 - ArcInstance.ArrivalTime;
+						ArcInstance.RunTime = runningProcess->Runtime;
+						ArcInstance.RemainingTime = ArcInstance.RunTime;
+						ArcInstance.EventTime = Clk2;
+						ArcInstance.State = 0;
+						
+						Temp2->Next->ArchiveInstance = ArcInstance;
+						Temp2->Next->Next = NULL;
+					}
+					//
 
 					if(fork() == 0){
 						char char_arg[100]; 
@@ -195,9 +374,30 @@ int main(int argc, char * argv[])
 					printf("clk: %d  \t Process of ID: %d starting\n", getClk(), runningProcess->ID);
 					runningProcess->pid = PID;
 
+					struct Process RP = *runningProcess;
 					sleep(runningProcess->RemainingTime-1);
 					
-					while(runningProcess){}					
+					while(runningProcess){}	
+					
+					//Might Need Semaphore --Archive Related--
+					int Clk3 = getClk();
+					struct ArchiveNode* Temp3 = ArchiveHead;
+					while(Temp3->Next != NULL)
+						Temp3 = Temp3->Next;
+						
+					Temp3->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+					struct Archive ArcInstance;
+					ArcInstance.ID = RP.ID;
+					ArcInstance.ArrivalTime = RP.Arrival;
+					ArcInstance.WaitingTime = Clk3 - ArcInstance.ArrivalTime - RP.Runtime;
+					ArcInstance.RunTime = RP.Runtime;
+					ArcInstance.RemainingTime = 0;
+					ArcInstance.EventTime = Clk3;
+					ArcInstance.State = 3;
+					
+					Temp3->Next->ArchiveInstance = ArcInstance;
+					Temp3->Next->Next = NULL;
+					//		
 				}
 				
 			}
@@ -216,6 +416,46 @@ int main(int argc, char * argv[])
 								exit(0);
 							}
 							
+							//Might need a semaphore
+							//
+							int Clk4 = getClk();
+							if(ArchiveHead == NULL)
+							{
+								ArchiveHead = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+								
+								struct Archive ArcInstance;
+								ArcInstance.ID = ReadyQueue->Value->ID;
+								ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+								ArcInstance.WaitingTime = 0;
+								ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+								ArcInstance.RemainingTime = ArcInstance.RunTime;
+								ArcInstance.EventTime = Clk4;
+								ArcInstance.State = 0;
+								
+								ArchiveHead->ArchiveInstance = ArcInstance;
+								ArchiveHead->Next = NULL;
+							}
+							else
+							{
+								struct ArchiveNode* Temp2 = ArchiveHead;
+								while(Temp2->Next != NULL)
+									Temp2 = Temp2->Next;
+									
+								Temp2->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+								struct Archive ArcInstance;
+								ArcInstance.ID = ReadyQueue->Value->ID;
+								ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+								ArcInstance.WaitingTime = 0;
+								ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+								ArcInstance.RemainingTime = ArcInstance.RunTime;
+								ArcInstance.EventTime = Clk4;
+								ArcInstance.State = 0;
+								
+								Temp2->Next->ArchiveInstance = ArcInstance;
+								Temp2->Next->Next = NULL;
+							}
+							//
+							
 							usleep(100);
 							down(semid_SHC2);
 							down(semid_PG2);
@@ -229,6 +469,27 @@ int main(int argc, char * argv[])
 							printf("clk: %d  \t ID: %d will start\n",getClk(), ReadyQueue->Value->ID);
 						}
 						else{
+							//Might need a semaphore
+							//
+							int Clk = getClk();
+							struct ArchiveNode* Temp = ArchiveHead;
+							while(Temp->Next != NULL)
+								Temp = Temp->Next;
+								
+							Temp->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+							struct Archive ArcInstance;
+							ArcInstance.ID = ReadyQueue->Value->ID;
+							ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+							ArcInstance.WaitingTime = Clk - ArcInstance.ArrivalTime - (ReadyQueue->Value->Runtime - ReadyQueue->Value->RemainingTime);
+							ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+							ArcInstance.RemainingTime = ReadyQueue->Value->RemainingTime;
+							ArcInstance.EventTime = Clk;
+							ArcInstance.State = 2;
+							
+							Temp->Next->ArchiveInstance = ArcInstance;
+							Temp->Next->Next = NULL;
+							//
+						
 							kill(ReadyQueue->Value->pid, SIGCONT);
 							printf("clk: %d  \t ID: %d will resume\n",getClk(), ReadyQueue->Value->ID);
 						}
@@ -240,6 +501,27 @@ int main(int argc, char * argv[])
 					}
 				}
 				else if(preemption_flag){
+					//Might need a semaphore
+					//
+					int Clk5 = getClk();
+					struct ArchiveNode* Temp5 = ArchiveHead;
+					while(Temp5->Next != NULL)
+						Temp5 = Temp5->Next;
+						
+					Temp5->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+					struct Archive ArcInstance;
+					ArcInstance.ID = ReadyQueue->Value->ID;
+					ArcInstance.ArrivalTime = ReadyQueue->Value->Arrival;
+					ArcInstance.WaitingTime = Clk5 - ArcInstance.ArrivalTime - (ReadyQueue->Value->Runtime - ReadyQueue->Value->RemainingTime);
+					ArcInstance.RunTime = ReadyQueue->Value->Runtime;
+					ArcInstance.RemainingTime = ReadyQueue->Value->RemainingTime;
+					ArcInstance.EventTime = Clk5;
+					ArcInstance.State = 1;
+					
+					Temp5->Next->ArchiveInstance = ArcInstance;
+					Temp5->Next->Next = NULL;
+					//
+				
 					kill(runningProcess->pid, SIGTSTP);
 					if(fork() == 0){
 						char char_arg[100]; 
@@ -247,6 +529,26 @@ int main(int argc, char * argv[])
 						int Status = system(char_arg);
 						exit(0);
 					}
+					
+					//
+					int Clk6 = getClk();
+					struct ArchiveNode* Temp6 = ArchiveHead;
+					while(Temp6->Next != NULL)
+						Temp6 = Temp6->Next;
+						
+					Temp6->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+					struct Archive ArcInstance2;
+					ArcInstance2.ID = ReadyQueue->Value->ID;
+					ArcInstance2.ArrivalTime = ReadyQueue->Value->Arrival;
+					ArcInstance2.WaitingTime = 0;
+					ArcInstance2.RunTime = ReadyQueue->Value->Runtime;
+					ArcInstance2.RemainingTime = ArcInstance2.RunTime;
+					ArcInstance2.EventTime = Clk6;
+					ArcInstance2.State = 0;
+					
+					Temp6->Next->ArchiveInstance = ArcInstance2;
+					Temp6->Next->Next = NULL;
+					//
 
 					usleep(100);
 					down(semid_SHC2);
@@ -350,8 +652,29 @@ void ProcessFinished(int signum){
 
 	runningProcess->finishTime = getClk();
 	processFinished_flag = true;
-
-	addToArchive(runningProcess);
+	
+	if(SchedulingAlgorithm == SRTN || SchedulingAlgorithm == RR)
+	{
+		//
+		int Clk6 = getClk();
+		struct ArchiveNode* Temp6 = ArchiveHead;
+		while(Temp6->Next != NULL)
+			Temp6 = Temp6->Next;
+			
+		Temp6->Next = (struct ArchiveNode*)malloc(sizeof(struct ArchiveNode));
+		struct Archive ArcInstance2;
+		ArcInstance2.ID = runningProcess->ID;
+		ArcInstance2.ArrivalTime = runningProcess->Arrival;
+		ArcInstance2.WaitingTime = Clk6 - ArcInstance2.ArrivalTime - (runningProcess->Runtime - runningProcess->RemainingTime);
+		ArcInstance2.RunTime = runningProcess->Runtime;
+		ArcInstance2.RemainingTime = 0;
+		ArcInstance2.EventTime = Clk6;
+		ArcInstance2.State = 3;
+		
+		Temp6->Next->ArchiveInstance = ArcInstance2;
+		Temp6->Next->Next = NULL;
+		//
+	}
 
 	printf("clk: %d  \t Procces %d has finished :)\n", runningProcess->finishTime, runningProcess->ID);
 
@@ -413,6 +736,35 @@ void addToReadyQueue(struct Node* node){
 /* Clear the resources before exit */
 void CleanUp(int signum)
 {
+	FILE * pFile; //Openning the procceses file for reading
+	pFile = fopen("Output.txt", "w+");
+	
+	while(1)  //Writing Output file
+	{
+		fprintf(pFile, "#At\ttime\tx\tprocess\ty\tstate\tarr\tw\ttotal\tz\tremain\ty\twait\tk\n");
+		struct ArchiveNode* Temp = ArchiveHead;
+		while(Temp != NULL)
+		{
+			char Word[20];
+			if(Temp->ArchiveInstance.State == 0)
+				sprintf(Word, "started");
+			else if(Temp->ArchiveInstance.State == 1)
+				sprintf(Word, "stopped");
+			else if(Temp->ArchiveInstance.State == 2)
+				sprintf(Word, "resumed");
+			else if(Temp->ArchiveInstance.State == 3)
+				sprintf(Word, "finished");
+		
+			fprintf(pFile, "At\ttime\t%d\tprocess\t%d\t%s\tarr\t%d\ttotal\t%d\tremain\t%d\twait\t%d\n", Temp->ArchiveInstance.EventTime, Temp->ArchiveInstance.ID, Word, Temp->ArchiveInstance.ArrivalTime, Temp->ArchiveInstance.RunTime, Temp->ArchiveInstance.RemainingTime, Temp->ArchiveInstance.WaitingTime);
+			
+			Temp = Temp->Next;
+		}
+		
+		break;
+  	}
+  	
+  	fclose(pFile);
+
 	shmctl(shmid_SCH1, IPC_RMID, NULL);
 	semctl(semid_SHC1, IPC_RMID, 0);
 	semctl(semid_SHC2, IPC_RMID, 0);
