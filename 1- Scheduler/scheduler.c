@@ -736,8 +736,16 @@ void addToReadyQueue(struct Node* node){
 /* Clear the resources before exit */
 void CleanUp(int signum)
 {
+	int Counter = 0;
+	float AvgWait = 0;
+	float AvgWTA = 0;
+	int TotalRunTime = 0;
+	int MaxFT = 0;
+	float CPU_Utilizatiion = 0;
+	float StandardDev = 0;
+
 	FILE * pFile; //Openning the procceses file for reading
-	pFile = fopen("Output.txt", "w+");
+	pFile = fopen("scheduler.log", "w+");
 	
 	while(1)  //Writing Output file
 	{
@@ -753,7 +761,17 @@ void CleanUp(int signum)
 			else if(Temp->ArchiveInstance.State == 2)
 				sprintf(Word, "resumed");
 			else if(Temp->ArchiveInstance.State == 3)
+			{
 				sprintf(Word, "finished");
+				
+				AvgWait += Temp->ArchiveInstance.WaitingTime;
+				AvgWTA += (Temp->ArchiveInstance.WaitingTime + Temp->ArchiveInstance.RunTime)/Temp->ArchiveInstance.RunTime;
+				TotalRunTime += Temp->ArchiveInstance.RunTime;
+				
+				if(MaxFT < (Temp->ArchiveInstance.WaitingTime + Temp->ArchiveInstance.ArrivalTime + Temp->ArchiveInstance.RunTime))
+					MaxFT = (Temp->ArchiveInstance.WaitingTime + Temp->ArchiveInstance.ArrivalTime + Temp->ArchiveInstance.RunTime);
+				Counter++;
+			}
 		
 			fprintf(pFile, "At\ttime\t%d\tprocess\t%d\t%s\tarr\t%d\ttotal\t%d\tremain\t%d\twait\t%d\n", Temp->ArchiveInstance.EventTime, Temp->ArchiveInstance.ID, Word, Temp->ArchiveInstance.ArrivalTime, Temp->ArchiveInstance.RunTime, Temp->ArchiveInstance.RemainingTime, Temp->ArchiveInstance.WaitingTime);
 			
@@ -764,6 +782,43 @@ void CleanUp(int signum)
   	}
   	
   	fclose(pFile);
+  	
+  	AvgWait /= Counter;
+  	AvgWTA /= Counter;
+  	CPU_Utilizatiion = ((float)TotalRunTime / MaxFT) * 100;
+  	
+  	struct ArchiveNode* Temp = ArchiveHead;
+	while(Temp != NULL)
+	{
+		if(Temp->ArchiveInstance.State == 3)
+		{
+			float Temp2 = (Temp->ArchiveInstance.WaitingTime + Temp->ArchiveInstance.RunTime)/(Temp->ArchiveInstance.RunTime) - AvgWTA;
+			StandardDev += (Temp2*Temp2);
+		}
+		
+		Temp = Temp->Next;
+	}
+	
+	StandardDev = sqrtf(StandardDev);
+  	
+  	FILE * pFile2; //Openning the procceses file for reading
+	pFile2 = fopen("scheduler.perf", "w+");
+	
+	fprintf(pFile2, "CPU\tutilization\t=\t%0.2f%%\n", CPU_Utilizatiion);
+	fprintf(pFile2, "Avg\tWTA\t=\t%0.2f\n", AvgWTA);
+	fprintf(pFile2, "Avg\tWaiting\t=\t%0.2f\n", AvgWait);
+	fprintf(pFile2, "Std\tWTA\t=\t%0.2f", StandardDev);
+  	
+  	fclose(pFile2);
+	
+  	Temp = ArchiveHead;
+  	while(Temp != NULL)
+  	{
+  		struct ArchiveNode* ARC2 = Temp;
+  		Temp = Temp->Next;
+  		
+  		free(ARC2);
+  	}
 
 	shmctl(shmid_SCH1, IPC_RMID, NULL);
 	semctl(semid_SHC1, IPC_RMID, 0);
