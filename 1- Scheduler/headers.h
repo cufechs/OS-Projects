@@ -10,12 +10,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <math.h>
 
 typedef short bool;
 #define true 1
 #define false 0
 
 #define SHKEY 300
+#define SHKEYPROCESS1 301
+#define SHKEYPROCESS2 332
+
 
 
 ///==============================
@@ -23,7 +27,49 @@ typedef short bool;
 int * shmaddr;                 //
 //===============================
 
+enum Algo{RR, HPF, SRTN};
 
+struct Process
+{
+	int ID;
+	int Arrival;
+	int Runtime;
+	int Priority;
+	int RemainingTime;
+    int finishTime;
+
+    pid_t pid;
+    bool generated;
+};
+
+struct Node
+{
+	struct Node* Next;
+	struct Process* Value;
+};
+
+struct msgbuff
+{
+    long mtype;
+    pid_t mpid;
+};
+
+struct Archive
+{
+	int ID;
+	int ArrivalTime;
+	int WaitingTime;
+	int RunTime;
+	int RemainingTime;
+	int EventTime;
+	int State; //0 Started, 1 Stopped, 2 Resumed, 3 Finished.
+};
+
+struct ArchiveNode
+{
+	struct Archive ArchiveInstance;
+	struct ArchiveNode* Next;
+};
 
 int getClk()
 {
@@ -37,13 +83,13 @@ int getClk()
 */
 void initClk()
 {
-    int shmid = shmget(SHKEY, 4, 0444);
+    int shmid = shmget(SHKEY, 4, 0644);
     while ((int)shmid == -1)
     {
         //Make sure that the clock exists
         printf("Wait! The clock not initialized yet!\n");
         sleep(1);
-        shmid = shmget(SHKEY, 4, 0444);
+        shmid = shmget(SHKEY, 4, 0644);
     }
 
     shmaddr = (int *) shmat(shmid, (void *)0, 0);
@@ -64,5 +110,43 @@ void destroyClk(bool terminateAll)
     if (terminateAll)
     {
         killpg(getpgrp(), SIGINT);
+    }
+}
+
+
+union Semun
+{
+    int val;               /* value for SETVAL */
+    struct semid_ds *buf;  /* buffer for IPC_STAT & IPC_SET */
+    ushort *array;         /* array for GETALL & SETALL */
+    struct seminfo *__buf; /* buffer for IPC_INFO */
+    void *__pad;
+};
+
+void down(int sem)
+{
+    struct sembuf p_op;
+
+    p_op.sem_num = 0;
+    p_op.sem_op = -1;
+    p_op.sem_flg = !IPC_NOWAIT;
+
+    if (semop(sem, &p_op, 1) == -1){
+        perror("Error in down()");
+        exit(-1);
+    }
+}
+
+void up(int sem)
+{
+    struct sembuf v_op;
+
+    v_op.sem_num = 0;
+    v_op.sem_op = 1;
+    v_op.sem_flg = !IPC_NOWAIT;
+
+    if (semop(sem, &v_op, 1) == -1){
+        perror("Error in up()");
+        exit(-1);
     }
 }

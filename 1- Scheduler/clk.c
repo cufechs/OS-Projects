@@ -8,6 +8,7 @@
 #include "headers.h"
 
 int shmid;
+int semid_CLK;
 
 /* Clear the resources before exit */
 void cleanup(int signum)
@@ -36,10 +37,19 @@ int main(int argc, char * argv[])
         perror("Error in attaching the shm in clock!");
         exit(-1);
     }
+
+    semid_CLK = semget(980923, 1, 0666);
+	if ((long)semid_CLK == -1){
+        perror("Error in creating sem! in Clock!");
+        exit(-1);
+    }
+
     *shmaddr = clk; /* initialize shared memory */
     while (1)
     {
-        sleep(1);
+        //printf("current (CLK) time is %d\n", *shmaddr);
+        //up(semid_CLK);
+        usleep(500000);
         (*shmaddr)++;
     }
 }
