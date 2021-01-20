@@ -713,6 +713,8 @@ void removeFromReadyQueue(struct Node* node){
 			node->Next = NULL;
 			return;
 		}
+		
+		temp = temp->Next;
 	}
 }
 
@@ -773,7 +775,12 @@ void CleanUp(int signum)
 				Counter++;
 			}
 		
-			fprintf(pFile, "At\ttime\t%d\tprocess\t%d\t%s\tarr\t%d\ttotal\t%d\tremain\t%d\twait\t%d\n", Temp->ArchiveInstance.EventTime, Temp->ArchiveInstance.ID, Word, Temp->ArchiveInstance.ArrivalTime, Temp->ArchiveInstance.RunTime, Temp->ArchiveInstance.RemainingTime, Temp->ArchiveInstance.WaitingTime);
+			fprintf(pFile, "At\ttime\t%d\tprocess\t%d\t%s\tarr\t%d\ttotal\t%d\tremain\t%d\twait\t%d", Temp->ArchiveInstance.EventTime, Temp->ArchiveInstance.ID, Word, Temp->ArchiveInstance.ArrivalTime, Temp->ArchiveInstance.RunTime, Temp->ArchiveInstance.RemainingTime, Temp->ArchiveInstance.WaitingTime);
+			
+			if(Temp->ArchiveInstance.State == 3)
+				fprintf(pFile, "\tTA\t%d\tWTA\t%0.2f", (Temp->ArchiveInstance.WaitingTime + Temp->ArchiveInstance.RunTime), (float)(Temp->ArchiveInstance.WaitingTime + Temp->ArchiveInstance.RunTime)/(Temp->ArchiveInstance.RunTime));
+			
+			fprintf(pFile, "\n");
 			
 			Temp = Temp->Next;
 		}

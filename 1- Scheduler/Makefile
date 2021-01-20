@@ -12,5 +12,6 @@ all: clean build
 
 run:
 	make
+	ipcrm -a
 	clear
 	./process_generator.out
