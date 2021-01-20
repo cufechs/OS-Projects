@@ -1,9 +1,0 @@
-#At time x allocated y bytes for process z from i to j
-At time 2 allocated 16 bytes for process 1 from 16 to 32
-At time 12 freed 16 bytes for process 1 from 16 to 32
-At time 12 allocated 16 bytes for process 2 from 16 to 32
-At time 22 freed 16 bytes for process 2 from 16 to 32
-At time 22 allocated 16 bytes for process 3 from 16 to 32
-At time 32 freed 16 bytes for process 3 from 16 to 32
-At time 32 allocated 16 bytes for process 4 from 16 to 32
-At time 34 freed 16 bytes for process 4 from 16 to 32

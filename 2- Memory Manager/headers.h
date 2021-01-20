@@ -1,5 +1,4 @@
-#include "mem_mngr.h"
-
+#include "mem_mngr.h" //if you don't use scanf/printf change this include
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
@@ -11,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <math.h>
 
 typedef short bool;
 #define true 1
@@ -56,8 +56,26 @@ struct msgbuff
     pid_t mpid;
 };
 
+struct Archive
+{
+	int ID;
+	int ArrivalTime;
+	int WaitingTime;
+	int RunTime;
+	int RemainingTime;
+	int EventTime;
+	int State; //0 Started, 1 Stopped, 2 Resumed, 3 Finished.
 
+    int startMemIndex;
+    int endMemIndex;
+    int memSize;
+};
 
+struct ArchiveNode
+{
+	struct Archive ArchiveInstance;
+	struct ArchiveNode* Next;
+};
 
 int getClk()
 {

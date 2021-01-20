@@ -1,9 +1,4 @@
 #include <stdio.h>
-typedef short bool;
-#define true 1
-#define false 0
-FILE *f;
-
 /*
 For the memory manager to be used:
     1. call the "initMemMngr()" to initialize the widths arrays..
@@ -19,11 +14,9 @@ struct memStruct
     int start;
     int end;
     int id;
-    int allocOrDealloc;
 };
 
 struct memStruct n;
-
 
 /*Lists for different sizes : 256,128,64,32,16,8 -> let minimum size is 2^3=8
 these lists are for holding the available slots for each mem width at the front and the used will be at the end*/
@@ -205,7 +198,10 @@ struct memStruct deallocateMemory(int index, int id)
     {
         if (general[index][i].id == id)
         {
-            struct memStruct t = general[index][i];
+            struct memStruct t;
+            t.id = general[index][i].id;
+            t.start = general[index][i].start;
+            t.end = general[index][i].end;
             general[index][i].id = 0;
             sort(general[index], nSizes[index], widths[index]);
             checkMerging(general[index], nSizes[index], index);
@@ -239,8 +235,9 @@ struct memStruct allocateMemory(int size, int index, int id)
         //allocation this slot to this process
         general[index][0].id = id;
         printf("Process with id= %d start at address %d and ends at %d\n", general[index][0].id, general[index][0].start, general[index][0].end);
+        struct memStruct t = general[index][0];
         sort(general[index], nSizes[index], widths[index]);
-        return general[index][0];
+        return t;
     }
     else
     {
@@ -274,7 +271,7 @@ struct memStruct allocateProcess(int mem_size, int id)
         return allocateMemory(buddySize, index, id);
     else
         printf("Invalid process Mem Size i.e size > 256 \n");
-    
+
     return n;
 }
 //for deallocating..
